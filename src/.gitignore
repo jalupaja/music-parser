@@ -1,0 +1,12 @@
+src/T
+src/__pycache
+src/db
+.DS_Store
+.idea
+*.log
+tmp/
+
+*.py[cod]
+*.egg
+build
+htmlcov
