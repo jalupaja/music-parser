@@ -10,13 +10,13 @@ def add_playlist(text, trackDIV, trackLINK, artistSPAN):
     ret = []
 
     for track in tracks:
-        span1 = track.find("a", trackLINK)
-        span2 = track.find("span", artistSPAN).findAll("a")
-        artists = []
+        title = track.find("a", trackLINK)
+        artists = track.find("span", artistSPAN).findAll("a")
+        artist_arr = []
 
-        for artist in span2:
-            artists.append(artist.decode_contents())
-        ret.append([playlistName, span1.decode_contents(), ",".join(str(x) for x in artists), span1['href'][span1['href'].index("track/") + 6:], "spotify"])
+        for artist in artists:
+            artist_arr.append(artist.decode_contents())
+        ret.append([playlistName, title.decode_contents(), ",".join(str(x) for x in artist_arr), title['href'][title['href'].index("track/") + 6:], "spotify", ""])
     return ret
 
 
@@ -25,4 +25,4 @@ def add_track(text, url):
     artists = text.title.decode_contents()[text.title.decode_contents().rfind(" - ") + 8 :text.title.decode_contents().rfind(" | ")]
     url = url[url.index("track/") + 6:]
 
-    return [["", title, artists, url, "spotify"]]
+    return [["", title, artists, url, "spotify", ""]]
