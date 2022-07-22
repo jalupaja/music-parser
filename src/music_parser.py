@@ -2,9 +2,11 @@
 
 import requests
 from bs4 import BeautifulSoup
-import spotify_parser
 import sqlite3
 import json
+
+import spotify_parser
+import piped_parser
 
 
 def err_file(file):
@@ -22,7 +24,7 @@ def __setup_output(outputVar, outputFile):
     if outputVar == "sqlite" or outputVar == "sqlite3":
         con = sqlite3.connect(outputFile)
         con.cursor().execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, youtube_url TEXT)''')
+            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
         con.close()
         return __array_to_sqlite
     elif outputVar == "json":
@@ -35,7 +37,7 @@ def __array_to_sqlite(outputFile, arr):
     conn = sqlite3.connect(outputFile)
     db = conn.cursor()
     for data in arr:
-        db.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\')")
+        db.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\')")
     conn.close()
 
 
@@ -48,15 +50,15 @@ def __array_to_json(outputFile, arr):
     plName = arr[0][0]
     for data in arr:
         if data[0] == plName:
-            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4]})
+            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
         else:
             out.append({"name": plName, "tracks": tracks})
             plName = data[0]
             tracks.clear()
-            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4]})
+            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
 
     out.append({"name": plName, "tracks": tracks})
-    tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4]})
+    tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
 
     with open(outputFile, 'w') as file:
         file.write(json.dumps(out))
@@ -65,8 +67,9 @@ def __array_to_json(outputFile, arr):
 def __parse_single_url(url):
     # parse from local file
     # with open("T/spotify_parser/playlist/movie_playlist.html") as fp:
-    with open("T/spotify_parser/album/album.html") as fp:
+    # with open("T/spotify_parser/album/album.html") as fp:
     # with open("T/spotify_parser/track/track.html") as fp:
+    with open("T/invidious/playlist.html") as fp:
         soup = BeautifulSoup(fp, features="html.parser")
     url = "album/abc"
 
@@ -76,7 +79,7 @@ def __parse_single_url(url):
     # TODO check if request was succesfull
 
     # create database table if it doesn't exist
-    site_name = soup.find("meta", property="og:site_name")["content"]
+    site_name = soup.find("title").decode_contents().rsplit(None, 1)[-1]
 
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
@@ -87,6 +90,14 @@ def __parse_single_url(url):
         else:
             err_parse(site_name, site_about.replace("spotify.", ""))
             return None
+    elif site_name == "Piped":
+        print("piped")  # TODO doesn't work cuz of needed javascript
+    elif site_name == "Invidious":
+        # TODO differentiate between playlist, artists, single videos + RETURN
+        return piped_parser.add_playlist(soup, "pure-u-1 pure-u-md-1-4", "channel-profile")
+        # piped_parser.add_vid(soup, "channel-profile")
+    elif site_name == "YouTube":
+        print("YT") # TODO
     else:
         err_parse(site_name)
         return None
@@ -109,6 +120,6 @@ def parse_urls(url, outputVar, outputFile):
     for uri in urls:
         add = __parse_single_url(uri)
         if add is not None:
-            data.append(add)
+            data += add
 
     output_func(outputFile, data)
