@@ -12,6 +12,8 @@ def add_playlist(text, vidDiv, vidLink):
     for track in tracks:
         title = track.find("p", "").decode_contents()
         artist = track.find("p", "channel-name").decode_contents()
+        # TODO add feat. ... from title to artists
+        # TODO parse title for music videos (remove MV, feat, ..)
         url = track.find("div", "icon-buttons").find("a")['href'].replace("https://www.youtube.com/watch?v=", "").split("&", 1)[0]
         ret.append([playlistName, title, artist, url, "yt", url])
 
@@ -23,5 +25,4 @@ def add_vid(text, vidLink):
     title = title_h1.decode_contents().split("\n", 2)[1].strip()
     url = title_h1.find("a")['href'].replace("/watch?v=", "").split("&", 1)[0]
     artists = text.find("div", vidLink).find("span").decode_contents().split("<", 1)[0].strip()
-    print(artists)
     return [["", title, artists, url, "yt", url]]
