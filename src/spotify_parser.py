@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 
 
+# TODO add function/ new file to get all playlists from user (with and without login)
+
 def add_playlist(text, trackDIV, trackLINK, artistSPAN):
     playlistName = text.title.decode_contents()[:text.title.decode_contents().rfind(" - ")]
     tracks = text.findAll("div", trackDIV)
