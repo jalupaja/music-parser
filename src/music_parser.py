@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import subprocess
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
@@ -20,23 +21,40 @@ def print_success(text):
     print("\033[0;32mSUCCESS: " + text + "\033[1;0m")
 
 
+__current_invidious_instance = ""
+__current_invidious_counter = 0
+
+
 def __get_invidious_instance(i=3):
-    instance = config.INVIDIOUS_MIRRORS[random.randint(0, len(config.INVIDIOUS_MIRRORS) - 1)]
-    try:
-        res = requests.get(instance)
-    except:
-        if i <= 0:
-            print_error("Please check your internet connection")
-            exit()
-        return __get_invidious_instance(i - 1)
+    global __current_invidious_instance
+    global __current_invidious_counter
+    if __current_invidious_counter == 0:
+        __current_invidious_counter = 10
+        __current_invidious_instance = config.INVIDIOUS_MIRRORS[random.randint(0, len(config.INVIDIOUS_MIRRORS) - 1)]
+        try:
+            res = requests.get(__current_invidious_instance)
+        except:
+            if i <= 0:
+                print_error("Please check your internet connection")
+                exit()
+            return __get_invidious_instance(i - 1)
 
 
-    if res.status_code != 200:
-        if i <= 0:
-            print_error("couldn't connect to an Invidious instance.\nCheck your internet connection or update the config.py file")
-            exit()
-        return __get_invidious_instance(i - 1)
-    return instance
+        if res.status_code != 200:
+            if i <= 0:
+                print_error("couldn't connect to an Invidious instance.\nCheck your internet connection or update the config.py file")
+                exit()
+            return __get_invidious_instance(i - 1)
+    else:
+        __current_invidious_counter -= 1
+    return __current_invidious_instance
+
+
+# TODO move to other file? ; ability to download multiple at once (workers?)
+# TODO test if downloaded file already exists
+# TODO get error msg if yt-dlp isn't installed, doesn't work
+def downloadVideo(youtube_id, file_name, file_path=".", ):
+    subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + file_path + "/" + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
 
 
 def __setup_output(outputVar, outputFile):
@@ -50,6 +68,8 @@ def __setup_output(outputVar, outputFile):
         with open(outputFile, 'w') as file:
             file.write("")
         return __array_to_json
+    elif outputVar == "download":
+        return __array_to_download
     elif outputVar == "" and outputFile == "":
         return __array_to_output
     elif outputFile == "":
@@ -62,6 +82,7 @@ def __array_to_sqlite(outputFile, arr):
     conn = sqlite3.connect(outputFile)
     db = conn.cursor()
     for data in arr:
+        # TODO user ON CONFLICT instead of IGNORE (playlist_name, title -> primary/...)
         db.execute("INSERT OR IGNORE INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\')")
     conn.commit()
     conn.close()
@@ -92,6 +113,12 @@ def __array_to_json(outputFile, arr):
 
 def __array_to_output(useless, arr):
     print(arr)  # TODO should be improved
+
+
+def __array_to_download(outputFolder, arr):
+    # TODO inefficient af
+    for data in arr:
+        downloadVideo(data[5], data[1], outputFolder)
 
 
 def __replace_with_invidious(url):
@@ -129,12 +156,15 @@ def __parse_single_url(url):
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
-            return spotify_parser.add_playlist(soup, "Row__Container-sc-brbqzp-0 jKreJT", "EntityRowV2__Link-sc-ayafop-8 cGmPqp", "Type__StyledComponent-sc-1ell6iv-0 bhCKIk Mesto-sc-1e7huob-0 Row__Subtitle-sc-brbqzp-1 hTPACX gmIWQx")
+            arr = spotify_parser.add_playlist(soup, "Row__Container-sc-brbqzp-0 jKreJT", "EntityRowV2__Link-sc-ayafop-8 cGmPqp", "Type__StyledComponent-sc-1ell6iv-0 Mesto-sc-1e7huob-0 Row__Subtitle-sc-brbqzp-1 eJGiPK gmIWQx")
         elif site_about == "music.song":
-            return spotify_parser.add_track(soup, url)
+            arr = spotify_parser.add_track(soup, url)
         else:
             print_error("cannot parse " + site_name + ": " + site_about.replace("spotify.", ""))
             return None
+        for data in arr:
+            data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[1] + " - " + data[2])
+        return arr
     elif site_name == "Piped":
         return __parse_single_url(__replace_with_invidious(url))
     elif site_name == "Invidious":
@@ -187,10 +217,14 @@ if __name__ == '__main__':
             outputVar = "json"
             outputFile = sys.argv[i + 1]
             i += 1
+        elif sys.argv[i] == "-d":
+            outputVar = "download"
+            outputFile = sys.argv[i + 1]
         elif sys.argv[i][0] == "-":
             print_error("'" + sys.argv[i] + "' is not a valid argument")
             exit()
         else:
             urls.append(sys.argv[i])
         i += 1
+
     parse_urls(urls, outputVar, outputFile)

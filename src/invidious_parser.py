@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import requests
+import json
 from bs4 import BeautifulSoup
 
 def add_playlist(text, vidDiv, vidLink):
@@ -26,3 +27,19 @@ def add_vid(text, vidLink):
     url = title_h1.find("a")['href'].replace("/watch?v=", "").split("&", 1)[0]
     artists = text.find("div", vidLink).find("span").decode_contents().split("<", 1)[0].strip()
     return [["", title, artists, url, "yt", url]]
+
+
+def search_yt_id(invInstance, search, last=False):
+    req = requests.get(invInstance + "/api/v1/search", params={
+        "q": search,
+        "duration": "short",
+        "type": "video"})
+    vids = json.loads(req.text)
+    try:
+        vidId = vids[0]['videoId']
+    except IndexError:
+        if last:
+            return ""
+        else:
+            return search_yt_id(invInstance, search, True)
+    return vidId
