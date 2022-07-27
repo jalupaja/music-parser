@@ -34,8 +34,8 @@ def search_yt_id(invInstance, search, last=False):
         "q": search,
         "duration": "short",
         "type": "video"})
-    vids = json.loads(req.text)
     try:
+        vids = json.loads(req.text)
         vidId = vids[0]['videoId']
     except IndexError:
         if last:

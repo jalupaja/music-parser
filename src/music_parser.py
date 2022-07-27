@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 import subprocess
+import asyncio
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
@@ -50,26 +52,23 @@ def __get_invidious_instance(i=3):
     return __current_invidious_instance
 
 
-# TODO move to other file? ; ability to download multiple at once (workers?)
-# TODO test if downloaded file already exists
 # TODO get error msg if yt-dlp isn't installed, doesn't work
-def downloadVideo(youtube_id, file_name, file_path=".", ):
-    subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + file_path + "/" + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
+async def downloadVideo(youtube_id, file_name, file_path=".", ):
+    if not os.path.exists(file_path + "/" + file_name + ".mp3"):
+        subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + file_path + "/" + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
 
 
 def __setup_output(outputVar, outputFile):
     if outputVar == "sqlite" or outputVar == "sqlite3":
         con = sqlite3.connect(outputFile)
         con.cursor().execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
+            (playlist_name TEXT UNIQUE, title TEXT UNIQUE, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
         con.close()
         return __array_to_sqlite
     elif outputVar == "json":
         with open(outputFile, 'w') as file:
             file.write("")
         return __array_to_json
-    elif outputVar == "download":
-        return __array_to_download
     elif outputVar == "" and outputFile == "":
         return __array_to_output
     elif outputFile == "":
@@ -78,20 +77,23 @@ def __setup_output(outputVar, outputFile):
         print_error(outputVar + "is not a supported output type!")
 
 
-def __array_to_sqlite(outputFile, arr):
+def __array_to_sqlite(downloadPath, outputFile, arr):
+    asyncio.run(__array_to_download(downloadPath, arr))
     conn = sqlite3.connect(outputFile)
     db = conn.cursor()
     for data in arr:
         # TODO user ON CONFLICT instead of IGNORE (playlist_name, title -> primary/...)
         db.execute("INSERT OR IGNORE INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\')")
+        # db.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\') ON CONFLICT (playlist_name, title) DO NOTHING") # doesn't work: ON CONFLICT clause does not match any PRIMARY KEY or UNIWQUE constraint
     conn.commit()
     conn.close()
 
 
-def __array_to_json(outputFile, arr):
+def __array_to_json(downloadPath, outputFile, arr):
 
     if len(arr) == 0:
         return
+    asyncio.run(__array_to_download(downloadPath, arr))
     out = []
     tracks = []
     plName = arr[0][0]
@@ -111,14 +113,21 @@ def __array_to_json(outputFile, arr):
         file.write(json.dumps(out))
 
 
-def __array_to_output(useless, arr):
+def __array_to_output(downloadPath, useless, arr):
+    asyncio.run(__array_to_download(downloadPath, arr))
     print(arr)  # TODO should be improved
 
 
-def __array_to_download(outputFolder, arr):
-    # TODO inefficient af
+async def __array_to_download(outputFolder, arr):
+    if outputFolder == "":
+        return
     for data in arr:
-        downloadVideo(data[5], data[1], outputFolder)
+        if (data[0] == ""):
+            folder = ""
+        else:
+            os.mkdir(data[0])
+            folder = data[0] + "/"
+        asyncio.run(downloadVideo(data[5], data[1], outputFolder + folder))
 
 
 def __replace_with_invidious(url):
@@ -159,6 +168,7 @@ def __parse_single_url(url):
             arr = spotify_parser.add_playlist(soup, "Row__Container-sc-brbqzp-0 jKreJT", "EntityRowV2__Link-sc-ayafop-8 cGmPqp", "Type__StyledComponent-sc-1ell6iv-0 Mesto-sc-1e7huob-0 Row__Subtitle-sc-brbqzp-1 eJGiPK gmIWQx")
         elif site_about == "music.song":
             arr = spotify_parser.add_track(soup, url)
+        # TODO add artists
         else:
             print_error("cannot parse " + site_name + ": " + site_about.replace("spotify.", ""))
             return None
@@ -178,7 +188,7 @@ def __parse_single_url(url):
         return None
 
 
-def parse_urls(url, outputVar="", outputFile=""):
+def parse_urls(url, outputVar="", outputFile="", downloadPath=""):
 
     urls = url
 
@@ -186,6 +196,7 @@ def parse_urls(url, outputVar="", outputFile=""):
         output_func = __setup_output(outputVar, outputFile)
     except:
         print_error("cannot access " + outputFile)
+        exit()
 
     if isinstance(url, str):
         urls = [url]
@@ -200,7 +211,21 @@ def parse_urls(url, outputVar="", outputFile=""):
         else:
             print_error("couldn't parse " + uri)
 
-    output_func(outputFile, data)
+    output_func(downloadPath, outputFile, data)
+
+
+def download_sqlite(inputFile, outputFolder):
+    try:
+        conn = sqlite3.connect(inputFile)
+    except:
+        print_error(inputFile + " doesn't exist or is not a valid database")
+    db = conn.cursor()
+    db.execute("SELECT * FROM playlists")
+    rows = db.fetchall()
+
+    __array_to_download(outputFolder, rows)
+
+    conn.close()
 
 
 if __name__ == '__main__':
@@ -208,6 +233,7 @@ if __name__ == '__main__':
     urls = []
     outputVar = ""
     outputFile = ""
+    downloadPath = ""
     while i < len(sys.argv):
         if sys.argv[i] == "-db":
             outputVar = "sqlite"
@@ -218,8 +244,7 @@ if __name__ == '__main__':
             outputFile = sys.argv[i + 1]
             i += 1
         elif sys.argv[i] == "-d":
-            outputVar = "download"
-            outputFile = sys.argv[i + 1]
+            downloadPath = sys.argv[i + 1]
         elif sys.argv[i][0] == "-":
             print_error("'" + sys.argv[i] + "' is not a valid argument")
             exit()
@@ -227,4 +252,4 @@ if __name__ == '__main__':
             urls.append(sys.argv[i])
         i += 1
 
-    parse_urls(urls, outputVar, outputFile)
+    parse_urls(urls, outputVar, outputFile, downloadPath)
