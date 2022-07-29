@@ -1,5 +1,5 @@
 # music parser
-> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single database while trying to find a YouTube link to the song.
+> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (using the Invidious). It can also download the songs to mp3 files using yt-dlp
 
 ## installation
 GUI version:
@@ -9,6 +9,8 @@ without GUI:
 `pip install -r requirements.txt
 
 if you install the project for the first time or parsing YouTube links takes too much time you should try manually renewing the `INVIDIOUS_MIRRORS` in `config.py` by setting them to the output of `renew_invidious_mirrors.py`
+
+You may also need to install ffmpeg in order to convert the downloaded videos to mp3
 
 ## usage
 `python music_parser.py <flags> url1 url2 url2 ...`

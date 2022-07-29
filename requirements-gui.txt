@@ -1,0 +1,5 @@
+yt-dlp>=2022
+requests>=2.27
+bs4>=0.0.1
+aiosqlite>=0.17.0
+PyQt5==5.15
