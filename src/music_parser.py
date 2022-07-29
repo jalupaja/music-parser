@@ -9,10 +9,50 @@ from bs4 import BeautifulSoup
 import sqlite3
 import json
 import random
+from queue import Queue
+from threading import Thread
 
 import config
 import spotify_parser
 import invidious_parser
+import SQLite_GUI
+
+
+# The following classes are copied from: https://betterprogramming.pub/how-to-make-parallel-async-http-requests-in-python-d0bd74780b8a
+class Worker(Thread):
+
+    def __init__(self, tasks):
+        Thread.__init__(self)
+        self.tasks = tasks
+        self.daemon = True
+        self.start()
+
+    def run(self):
+        while True:
+            func, args, kargs = self.tasks.get()
+            try:
+                func(*args, **kargs)
+            except Exception as e:
+                print(e)
+            finally:
+                self.tasks.task_done()
+
+
+class ThreadPool:
+    def __init__(self, num_threads):
+        self.tasks = Queue(num_threads)
+        for _ in range(num_threads):
+            Worker(self.tasks)
+
+    def add_task(self, func, *args, **kargs):
+        self.tasks.put((func, args, kargs))
+
+    def map(self, func, args_list):
+        for args in args_list:
+            self.add_task(func, args)
+
+    def wait_completion(self):
+        self.tasks.join()
 
 
 def print_error(text):
@@ -38,116 +78,81 @@ def __get_invidious_instance(i=3):
         except:
             if i <= 0:
                 print_error("Please check your internet connection")
-                exit()
+                return None
             return __get_invidious_instance(i - 1)
 
 
         if res.status_code != 200:
             if i <= 0:
                 print_error("couldn't connect to an Invidious instance.\nCheck your internet connection or update the config.py file")
-                exit()
+                return None
             return __get_invidious_instance(i - 1)
     else:
         __current_invidious_counter -= 1
     return __current_invidious_instance
 
 
-# TODO get error msg if yt-dlp isn't installed, doesn't work
-async def downloadVideo(youtube_id, file_name, file_path=".", ):
-    if not os.path.exists(file_path + "/" + file_name + ".mp3"):
-        subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + file_path + "/" + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
+def migrate_db(old_db_path, new_db_path):
+    oCon = sqlite3.connect(old_db_path)
+    oDb = oCon.cursor()
+    nCon = sqlite3.connect(old_db_path)
+    nDb = nCon.cursor()
+
+    nDb.execute('''CREATE TABLE IF NOT EXISTS playlists
+            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
+
+    data_arr = oDb.execute("SELECT (playlist_name, title, artists, url, url_type, yt_link) FROM playlists").fetchall()
+    nDb.close()
+
+    for data in data_arr:
+        nDb.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+    nDb.commit()
+    oDb.close()
 
 
-def __setup_output(outputVar, outputFile):
-    if outputVar == "sqlite" or outputVar == "sqlite3":
+def parse_urls(outputFile, urls, downloadPath):
+    pool = ThreadPool(40)
+    try:
         con = sqlite3.connect(outputFile)
-        con.cursor().execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT UNIQUE, title TEXT UNIQUE, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
-        con.close()
-        return __array_to_sqlite
-    elif outputVar == "json":
-        with open(outputFile, 'w') as file:
-            file.write("")
-        return __array_to_json
-    elif outputVar == "" and outputFile == "":
-        return __array_to_output
-    elif outputFile == "":
-        print_error("Please specify an output file")
+        db = con.cursor()
+        db.execute('''CREATE TABLE IF NOT EXISTS playlists
+            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
+    except:
+        print_error("cannot parse " + outputFile)
+        return "cannot parse " + outputFile
+
+    # if url is empty, and downloadPath is given -> download the whole database
+    if len(urls) == 0 and downloadPath != "":
+        data_arr = db.execute("SELECT * FROM playlists").fetchall()
+        down_arr = []
+        for data in data_arr:
+            down_arr.append([data[5], data[1], downloadPath + "/" + data[0]])
+        pool.map(downloadVideo, down_arr)
     else:
-        print_error(outputVar + "is not a supported output type!")
+        arr = []
+        for url in urls:
+            arr.append([url, downloadPath, outputFile, pool])
 
+        pool.map(__parse_single_url, arr)
 
-def __array_to_sqlite(downloadPath, outputFile, arr):
-    asyncio.run(__array_to_download(downloadPath, arr))
-    conn = sqlite3.connect(outputFile)
-    db = conn.cursor()
-    for data in arr:
-        # TODO user ON CONFLICT instead of IGNORE (playlist_name, title -> primary/...)
-        db.execute("INSERT OR IGNORE INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\')")
-        # db.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "") for x in data) + "\') ON CONFLICT (playlist_name, title) DO NOTHING") # doesn't work: ON CONFLICT clause does not match any PRIMARY KEY or UNIWQUE constraint
-    conn.commit()
-    conn.close()
-
-
-def __array_to_json(downloadPath, outputFile, arr):
-
-    if len(arr) == 0:
-        return
-    asyncio.run(__array_to_download(downloadPath, arr))
-    out = []
-    tracks = []
-    plName = arr[0][0]
-    for data in arr:
-        if data[0] == plName:
-            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
-        else:
-            out.append({"name": plName, "tracks": tracks})
-            plName = data[0]
-            tracks.clear()
-            tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
-
-    out.append({"name": plName, "tracks": tracks})
-    tracks.append({"title": data[1], "artists": data[2], "url": data[3], "url_type": data[4], "yt_link": data[5]})
-
-    with open(outputFile, 'w') as file:
-        file.write(json.dumps(out))
-
-
-def __array_to_output(downloadPath, useless, arr):
-    asyncio.run(__array_to_download(downloadPath, arr))
-    print(arr)  # TODO should be improved
-
-
-async def __array_to_download(outputFolder, arr):
-    if outputFolder == "":
-        return
-    for data in arr:
-        if (data[0] == ""):
-            folder = ""
-        else:
-            os.mkdir(data[0])
-            folder = data[0] + "/"
-        asyncio.run(downloadVideo(data[5], data[1], outputFolder + folder))
+    pool.wait_completion()
+    con.close()
+    return ""
 
 
 def __replace_with_invidious(url):
-    return __get_invidious_instance() + "/" + url.replace("://", "").split("/")[1]
+    invInstance = __get_invidious_instance()
+    if invInstance is not None:
+        return invInstance + "/" + url.replace("://", "").split("/")[1]
+    else:
+        return None
 
 
-def __parse_single_url(url):
+def __get_url_data(url):
     # check if link is to youtube and replace it with an invidious instance
     if "www.youtube.com" in url or "youtu.be" in url:
         url = __replace_with_invidious(url)
 
-    # parse from local file
-    # with open("T/spotify_parser/playlist/movie_playlist.html") as fp:
-    # with open("T/spotify_parser/album/album.html") as fp:
-    # with open("T/spotify_parser/track/track.html") as fp:
-    # with open("T/invidious/playlist.html") as fp:
-    #     soup = BeautifulSoup(fp, features="html.parser")
-    # url = "album/abc"
-
-    # parse from url
     try:
         req = requests.get(url)
     except:
@@ -161,7 +166,6 @@ def __parse_single_url(url):
 
     # create database table if it doesn't exist
     site_name = soup.find("title").decode_contents().rsplit(None, 1)[-1]
-
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
@@ -172,11 +176,9 @@ def __parse_single_url(url):
         else:
             print_error("cannot parse " + site_name + ": " + site_about.replace("spotify.", ""))
             return None
-        for data in arr:
-            data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[1] + " - " + data[2])
         return arr
     elif site_name == "Piped":
-        return __parse_single_url(__replace_with_invidious(url))
+        return __get_url_data(__replace_with_invidious(url))
     elif site_name == "Invidious":
         # TODO add channels
         if "playlist" in url:
@@ -188,63 +190,149 @@ def __parse_single_url(url):
         return None
 
 
-def parse_urls(url, outputVar="", outputFile="", downloadPath=""):
+def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_link):
+    con = sqlite3.connect(db_path)
+    db = con.cursor()
+    __add_to_db([playlist_name, title, artists, url, url_type, yt_link])
+    con.commit()
+    con.close()
 
-    urls = url
 
+# TODO add functions: add_url_playlist, search..., copy_to_playlist
+def __search_db(db_cursor, search, what_to_search):
+    return db_cursor.execute(f"SELECT rowid, * FROM playlists WHERE {what_to_search} LIKE '{search}'").fetchall()
+
+
+def search_manual(db_path, search, what_to_search="title"):
+    if what_to_search == "playlist":
+        what_to_search = "playlist_name"
+    elif what_to_search == "artist":
+        what_to_search = "artists"
+
+    con = sqlite3.connect(db_path)
+    db = con.cursor()
     try:
-        output_func = __setup_output(outputVar, outputFile)
+        result = __search_db(db, search, what_to_search)
     except:
-        print_error("cannot access " + outputFile)
-        exit()
+        print_error(f"{what_to_search} doesn't exist.")
 
-    if isinstance(url, str):
-        urls = [url]
+    for res in result:
+        print(",".join(res))
 
-    data = []
+    con.commit()
+    con.close()
 
-    for uri in urls:
-        add = __parse_single_url(uri)
-        if add is not None:
-            print_success("parsed " + uri)
-            data += add
+
+def __get_new_yt_links(title, artist):
+    return invidious_parser.__search_yt(__get_invidious_instance(), title + " " + artist + " music video")
+
+
+def renew_yt_link(db_path, id, yt_link=""):
+    con = sqlite3.connect(db_path)
+    db = con.cursor()
+    if yt_link == "":
+        db.execute(f"UPDATE playlists SET yt_link='{yt_link}' WHERE rowid={id}")
+    else:
+        data = db.execute(f"SELECT title FROM playlists WHERE rowid={id}")
+        try:
+            res = __get_new_yt_links(data[2], data[3])
+            for i in range(5):
+                print(f"({i + 1}) '{res[i]['title']} by '{res[i]['author']} : {res[i]['videoId']}")
+            i = input("\ninput the id: ")
+            if i != "":
+                db.execute(f"UPDATE playlists SET yt_link='{res[int(i - 1)]['videoId']}' WHERE rowid={id}")
+
+        except:
+            print_error("couldn't parse YouTube links")
+
+    con.commit()
+    con.close()
+
+
+def __add_to_db(db_cursor, data):
+    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+
+
+def __parse_single_url(arr):
+    url = arr[0]
+    downloadPath = arr[1]
+    con = sqlite3.connect(arr[2])
+    db = con.cursor()
+    pool = arr[3]
+
+    data_arr = __get_url_data(url)
+
+    if data_arr is not None or len(data_arr) == 0:
+        if downloadPath != "":
+            down_arr = []
+            for data in data_arr:
+                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), downloadPath + "/" + data[0].replace("'", "’")])
+            pool.map(downloadVideo, down_arr)
+
+        fail_counter = 0
+        for data in data_arr:
+            if len(db.execute("SELECT title FROM playlists WHERE playlist_name='" + data[0].replace("'", "’") + "' AND title='" + data[1].replace("'", "’") + "'").fetchall()) < 1:
+                try:
+                    if data[5] == "":
+                        data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[2].replace("'", "’") + " " + data[1].replace("'", "’") + " music video")
+                except:
+                    data[5] = ""
+                try:
+                    __add_to_db(db, data)
+                except:
+                    fail_counter += 1
+                    pass
+        con.commit()
+        con.close()
+
+        if fail_counter == len(data_arr):
+            print_error(f"couldn't save {url}")
+        elif fail_counter > 0:
+            print_error(f"only saved {len(data_arr) - fail_counter} out of {len(data_arr)}")
         else:
-            print_error("couldn't parse " + uri)
+            print_success(f"parsed {url}")
 
-    output_func(downloadPath, outputFile, data)
+    else:
+        print_error(f"couldn't parse {url}")
 
 
-def download_sqlite(inputFile, outputFolder):
-    try:
-        conn = sqlite3.connect(inputFile)
-    except:
-        print_error(inputFile + " doesn't exist or is not a valid database")
-    db = conn.cursor()
-    db.execute("SELECT * FROM playlists")
-    rows = db.fetchall()
+def downloadVideo(arr):
+    youtube_id = arr[0]
+    file_name = arr[1].replace("/", "|")
+    file_path = arr[2]
 
-    __array_to_download(outputFolder, rows)
+    if youtube_id == "":
+        return
 
-    conn.close()
+    if (file_path == ""):
+        folder = ""
+    else:
+        try:
+            os.mkdir(file_path)
+        except:
+            pass
+        folder = file_path + "/"
+
+    # TODO proxy this
+    if not os.path.exists(folder + file_name + ".mp3"):
+        subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + folder + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
 
 
 if __name__ == '__main__':
     i = 1
     urls = []
-    outputVar = ""
-    outputFile = ""
+    outputFile = "db.db"
     downloadPath = ""
+    useGui = False
     while i < len(sys.argv):
         if sys.argv[i] == "-db":
-            outputVar = "sqlite"
-            outputFile = sys.argv[i + 1]
-            i += 1
-        elif sys.argv[i] == "-json":
-            outputVar = "json"
             outputFile = sys.argv[i + 1]
             i += 1
         elif sys.argv[i] == "-d":
             downloadPath = sys.argv[i + 1]
+            i += 1
+        elif sys.argv[i] == "-gui":
+            useGui = True
         elif sys.argv[i][0] == "-":
             print_error("'" + sys.argv[i] + "' is not a valid argument")
             exit()
@@ -252,4 +340,7 @@ if __name__ == '__main__':
             urls.append(sys.argv[i])
         i += 1
 
-    parse_urls(urls, outputVar, outputFile, downloadPath)
+    if useGui:
+        SQLite_GUI.main(outputFile, urls, downloadPath)
+    else:
+        parse_urls(outputFile, urls, downloadPath)
