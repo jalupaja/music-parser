@@ -29,13 +29,18 @@ def add_vid(text, vidLink):
     return [["", title, artists, url, "yt", url]]
 
 
-def search_yt_id(invInstance, search, last=False):
+def __search_yt(invInstance, search):
     req = requests.get(invInstance + "/api/v1/search", params={
         "q": search,
+        "sort_by": "view_count",
         "duration": "short",
         "type": "video"})
+    return json.loads(req.text)
+
+
+def search_yt_id(invInstance, search, last=False):
     try:
-        vids = json.loads(req.text)
+        vids = __search_yt(invInstance, search)
         vidId = vids[0]['videoId']
     except IndexError:
         if last:
