@@ -1,6 +1,7 @@
 # music parser
 > music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (using the Invidious). It can also download the songs to mp3 files using yt-dlp
 
+
 ## installation
 GUI version:
 `pip install -r requirements-gui.txt`
@@ -12,6 +13,7 @@ if you install the project for the first time or parsing YouTube links takes too
 
 You may also need to install ffmpeg in order to convert the downloaded videos to mp3
 
+
 ## usage
 `python music_parser.py <flags> url1 url2 url2 ...`
 
@@ -20,6 +22,7 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 | `-db <file>` | specify the sqlite database file location | `./db.db`
 | `-d <path>` | download the urls to the specified path. If no urls are given this will download the whole database! | |
 | `-gui` | open the gui version (`requirements-gui.txt` has to be installed) | |
+
 
 ## useful functions
 > These are functions inside of music_parser.py Some of them are never called by the program but are useful when needing extendet functionality
@@ -32,3 +35,15 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 | `add_manual_track(db_path, playlist_name, title, url, url_type, yt_link)` | this will add a new entry to the database without utilizing the internet
 | `search_manual(db_path, search, what_to-search="title")` | this will search the given `search` term in the given database
 | `renew_yt_link(db_path, rowid, yt_link="")` | this will either set the `yt_link` of the given `rowid` or output the top five results given by YouTube and let the user decide which one to pick
+
+
+## TODO
+> What I might add in the future if I find the motivation
+
+- add proxies to yt-dlp
+- ability to parse artists and add them to a 'subscriptions' database
+- ability to parse login to spotify and parse all subscribed playlists
+- add unicode support
+- add a cli and gui search option that is useable
+- parse YouTube Video titles better (remove junk like: "M/V", "feat. ...", ...)
+- change gui layout to something more useable
