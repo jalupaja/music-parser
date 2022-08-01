@@ -56,11 +56,11 @@ class ThreadPool:
 
 
 def print_error(text):
-    print("\033[0;31mERROR: " + text + "\033[1;0m")
+    print(f"\033[0;31mERROR: {text}\033[1;0m")
 
 
 def print_success(text):
-    print("\033[0;32mSUCCESS: " + text + "\033[1;0m")
+    print(f"\033[0;32mSUCCESS: {text}\033[1;0m")
 
 
 __current_invidious_instance = ""
@@ -169,7 +169,12 @@ def __get_url_data(url):
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
-            arr = spotify_parser.add_playlist(soupe " + site_name + ": " + site_about.replace("spotify.", ""))
+            arr = spotify_parser.add_playlist(soup)
+        elif site_about == "music.song":
+            arr = spotify_parser.add_track(soup, url)
+        # TODO add artists
+        else:
+            print_error(f"cannot_parse {site_name}: {site_about.replace('spotify.', '')}")
             return None
         return arr
     elif site_name == "Piped":
@@ -219,7 +224,7 @@ def search_manual(db_path, search, what_to_search="title"):
 
 
 def __get_new_yt_links(title, artist):
-    return invidious_parser.__search_yt(__get_invidious_instance(), title + " " + artist + " music video")
+    return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} {music video}")
 
 
 def renew_yt_link(db_path, id, yt_link=""):
@@ -291,6 +296,15 @@ def __parse_single_url(arr):
         print_error(f"couldn't parse {url}")
 
 
+def __get_proxy():
+    proxy = proxy_file.readline()
+    if proxy:
+        return proxy.strip()
+    else:
+        proxy_file.seek(0)
+        return __get_proxy()
+
+
 def downloadVideo(arr):
     youtube_id = arr[0]
     file_name = arr[1].replace("/", "|")
@@ -309,8 +323,11 @@ def downloadVideo(arr):
         folder = file_path + "/"
 
     # TODO proxy this
-    if not os.path.exists(folder + file_name + ".mp3"):
-        subprocess.call("yt-dlp https://www.youtube.com/watch?v=" + youtube_id + " -x --sponsorblock-remove all -o \"" + folder + file_name + ".%(ext)s\" --audio-format mp3", shell=True)
+    if not os.path.exists(f"{folder}{file_name}.mp3"):
+        if config.proxy_file != "":
+            subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
+        else:
+            subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3", shell=True)
 
 
 if __name__ == '__main__':
@@ -329,13 +346,19 @@ if __name__ == '__main__':
         elif sys.argv[i] == "-gui":
             useGui = True
         elif sys.argv[i][0] == "-":
-            print_error("'" + sys.argv[i] + "' is not a valid argument")
+            print_error(f"'{sys.argv[i]}' is not a valid argument")
             exit()
         else:
             urls.append(sys.argv[i])
         i += 1
 
+    if config.proxy_file != "":
+        proxy_file = open(config.proxy_file, 'r')
+
     if useGui:
         SQLite_GUI.main(outputFile, urls, downloadPath)
     else:
         parse_urls(outputFile, urls, downloadPath)
+
+    if config.proxy_file != "":
+        proxy_file.close()
