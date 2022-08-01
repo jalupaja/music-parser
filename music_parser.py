@@ -169,12 +169,7 @@ def __get_url_data(url):
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
-            arr = spotify_parser.add_playlist(soup, "Row__Container-sc-brbqzp-0 jKreJT", "EntityRowV2__Link-sc-ayafop-8 cGmPqp", "Type__StyledComponent-sc-1ell6iv-0 Mesto-sc-1e7huob-0 Row__Subtitle-sc-brbqzp-1 eJGiPK gmIWQx")
-        elif site_about == "music.song":
-            arr = spotify_parser.add_track(soup, url)
-        # TODO add artists
-        else:
-            print_error("cannot parse " + site_name + ": " + site_about.replace("spotify.", ""))
+            arr = spotify_parser.add_playlist(soupe " + site_name + ": " + site_about.replace("spotify.", ""))
             return None
         return arr
     elif site_name == "Piped":
@@ -182,9 +177,9 @@ def __get_url_data(url):
     elif site_name == "Invidious":
         # TODO add channels
         if "playlist" in url:
-            return invidious_parser.add_playlist(soup, "pure-u-1 pure-u-md-1-4", "channel-profile")
+            return invidious_parser.add_playlist(soup)
         else:
-            return invidious_parser.add_vid(soup, "channel-profile")
+            return invidious_parser.add_vid(soup)
     else:
         print_error("cannot parse " + site_name)
         return None

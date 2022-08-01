@@ -3,10 +3,11 @@
 import requests
 import json
 from bs4 import BeautifulSoup
+import config
 
-def add_playlist(text, vidDiv, vidLink):
+def add_playlist(text):
     playlistName = text.find("div", "pure-u-2-3").find("h3").decode_contents()
-    tracks = text.findAll("div", vidDiv)
+    tracks = text.findAll("div", config.invidious_vid_div)
 
     ret = []
 
@@ -21,11 +22,11 @@ def add_playlist(text, vidDiv, vidLink):
     return ret
 
 
-def add_vid(text, vidLink):
+def add_vid(text):
     title_h1 = text.find("h1")
     title = title_h1.decode_contents().split("\n", 2)[1].strip()
     url = title_h1.find("a")['href'].replace("/watch?v=", "").split("&", 1)[0]
-    artists = text.find("div", vidLink).find("span").decode_contents().split("<", 1)[0].strip()
+    artists = text.find("div", config.invidious_vid_link).find("span").decode_contents().split("<", 1)[0].strip()
     return [["", title, artists, url, "yt", url]]
 
 
