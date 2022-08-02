@@ -143,14 +143,17 @@ def parse_urls(outputFile, urls, downloadPath):
 def __replace_with_invidious(url):
     invInstance = __get_invidious_instance()
     if invInstance is not None:
-        return invInstance + "/" + url.replace("://", "").split("/")[1]
+        if "://" not in url:
+            return invInstance + "/" + url
+        else:
+            return invInstance + "/" + url.replace("://", "").split("/")[1]
     else:
         return None
 
 
 def __get_url_data(url):
     # check if link is to youtube and replace it with an invidious instance
-    if "www.youtube.com" in url or "youtu.be" in url:
+    if "www.youtube.com" in url or "youtu.be" in url or "://" not in url:
         url = __replace_with_invidious(url)
 
     try:
@@ -224,7 +227,7 @@ def search_manual(db_path, search, what_to_search="title"):
 
 
 def __get_new_yt_links(title, artist):
-    return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} {music video}")
+    return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} music video")
 
 
 def renew_yt_link(db_path, id, yt_link=""):

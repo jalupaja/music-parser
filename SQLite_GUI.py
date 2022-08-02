@@ -143,10 +143,8 @@ def btn_push_sql():
 
 
 def btn_push_links(abc, links=[]):
-    print(links)
     if len(links) == 0:
         links = str(txt_sql_field.toPlainText()).split("\n")
-    print(links)
 
     lbl_sql_ret.setVisible(True)
     lbl_sql_ret.setText("Loading...")
@@ -229,11 +227,13 @@ def main(databaseLink, urls=[], download=""):
         tableButtons[0].toggle()
         tableButtonsChanged()
 
+    window.show()
+
+    # TODO get UI in separate Thread so that UI and parsing can happen at the same time
     if len(urls) > 0:
         txt_sql_field.setText("\n".join(urls))
         btn_push_links("", urls)
 
-    window.show()
     sys.exit(app.exec_())
 
 

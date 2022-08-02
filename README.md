@@ -40,7 +40,7 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 ## TODO
 > What I might add in the future if I find the motivation
 
-- add proxies to yt-dlp
+- move GUI in separate Thread to be able to search and use gui at the same time
 - ability to parse artists and add them to a 'subscriptions' database
 - ability to parse login to spotify and parse all subscribed playlists
 - add unicode support
