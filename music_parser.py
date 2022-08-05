@@ -3,7 +3,7 @@
 import os
 import sys
 import subprocess
-import asyncio
+import json
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
@@ -223,6 +223,65 @@ def search_manual(db_path, search, what_to_search="title"):
 
     con.commit()
     con.close()
+
+
+def add_years(db_path):
+
+    if not config.lastfm_api_key:
+        print_error("Please get an API key from last.fm and set it to the variable lastfm_api_key in config.py")
+
+    con = sqlite3.connect(db_path)
+    db_cursor = con.cursor()
+    try:
+        result = db_cursor.execute(f"SELECT rowid, title, artists FROM playlists WHERE year!=''").fetchall()
+    except:
+        print_error("There have no empty years!")
+        con.close()
+        return 0
+
+    con.close()
+
+    data = []
+    pool = ThreadPool(config.threads)
+    for res in result:
+        data.append(db_path, res[0], res[1], res[2])
+    pool.map(__add_year, data)
+    pool.wait_completion()
+
+
+def __add_year(arr):
+    rowid = arr[1]
+    title = arr[2]
+    artists = arr[3]
+
+    year = ""
+
+    if artists:
+        artists = artists.split(",")
+        for artist in artists:
+            res = requests.get(f"{config.lastfm_root}?method=track.getInfo&track={title}&artist={artist}&api_key={config.lastfm_api_key}&format=json")
+            try:
+                year = (json.loads(res.text))["track"]["wiki"]["published"].split(" ")[2].replace(",","")
+                break
+            except:
+                pass
+
+    else:
+        res = requests.get(f"{config.lastfm_root}?method=track.getInfo&track={title}&api_key={config.lastfm_api_key}&format=json")
+        try:
+            year = (json.loads(res.text))["track"]["wiki"]["published"].split(" ")[2].replace(",","")
+        except:
+            pass
+
+    if year:
+        con = sqlite3.connect(arr[0])
+        db_cursor = con.cursor()
+        db_cursor.execute(f"UPDATE playlists SET year='{year}' WHERE rowid={rowid}")
+        con.commit()
+        con.close()
+        print_success(f"Found the year {year} for {title}")
+    else:
+        print_error(f"Didn't find a year for {title}")
 
 
 def __get_new_yt_links(title, artist):
