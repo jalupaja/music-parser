@@ -48,23 +48,24 @@ def tableButtonsChanged():
     cols = data.description
     rows = data.fetchall()
 
+    qTable.setColumnCount(len(data.description))
+    qTable.setRowCount(len(rows))
+
     headers = []
     for header in cols:
         headers.append(header[0])
-
-    qTable.setColumnCount(len(data.description))
-    qTable.setRowCount(len(rows))
-    rowLen = len(rows)
-    colLen = len(rows[0])
-    for rowCount in range(rowLen):
-        for colCount in range(colLen):
-            nItem = QTableWidgetItem(str(rows[rowCount][colCount]))
-            qTable.setItem(rowCount, colCount, nItem)
-            if colCount == 0:
-                nItem.setFlags(nItem.flags() & Qt.ItemIsEditable)
-
-        rowCount += 1
     qTable.setHorizontalHeaderLabels(headers)
+
+    rowLen = len(rows)
+    if rowLen:
+        colLen = len(rows[0])
+        for rowCount in range(rowLen):
+            for colCount in range(colLen):
+                nItem = QTableWidgetItem(str(rows[rowCount][colCount]))
+                qTable.setItem(rowCount, colCount, nItem)
+                if colCount == 0:
+                    nItem.setFlags(nItem.flags() & Qt.ItemIsEditable)
+            rowCount += 1
 
 
 def cellChanged(x, y):
@@ -72,13 +73,13 @@ def cellChanged(x, y):
     if qTable.horizontalHeaderItem(y) == None:
         return
 
-    # check if there are other cells in the same column that had the same text
+    # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
         others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE rowid={qTable.item(x, 0).text()})").fetchall()
     except:
         return
 
-    if len(others) > 1:
+    if len(others) > 1 and not others[0]:
         msgBox = QMessageBox()
         msgBox.setText(f"There are {len(others) - 1} other items in '{qTable.horizontalHeaderItem(y).text()}'.\nDo you want to change all of them too?")
         msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
