@@ -32,6 +32,8 @@ spotify_artists_span = "Type__StyledComponent-sc-1ell6iv-0 Mesto-sc-1e7huob-0 Ro
 ## Invidious
 invidious_vid_div = "pure-u-1 pure-u-md-1-4"
 invidious_vid_link = "channel-profile"
+invidious_vid_date_div = "pure-u-1 pure-u-lg-3-5"
+invidious_playlist_div = "pure-u-2-3"
 
 ## set the variable below to a file containing http procies in order to use them to download content
 ## There is a problem that if the proxy doesn't work, the error will only be shown in the console.

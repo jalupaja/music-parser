@@ -7,7 +7,6 @@ import asyncio
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
-import json
 import random
 from queue import Queue
 from threading import Thread
@@ -99,13 +98,13 @@ def migrate_db(old_db_path, new_db_path):
     nDb = nCon.cursor()
 
     nDb.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
+            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
 
     data_arr = oDb.execute("SELECT (playlist_name, title, artists, url, url_type, yt_link) FROM playlists").fetchall()
     nDb.close()
 
     for data in data_arr:
-        nDb.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+        nDb.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
     nDb.commit()
     oDb.close()
 
@@ -116,7 +115,7 @@ def parse_urls(outputFile, urls, downloadPath):
         con = sqlite3.connect(outputFile)
         db = con.cursor()
         db.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT)''')
+            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
     except:
         print_error("cannot parse " + outputFile)
         return "cannot parse " + outputFile
@@ -193,10 +192,10 @@ def __get_url_data(url):
         return None
 
 
-def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_link):
+def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_link, year):
     con = sqlite3.connect(db_path)
     db = con.cursor()
-    __add_to_db([playlist_name, title, artists, url, url_type, yt_link])
+    __add_to_db([playlist_name, title, artists, url, url_type, yt_link, year])
     con.commit()
     con.close()
 
@@ -253,7 +252,7 @@ def renew_yt_link(db_path, id, yt_link=""):
 
 
 def __add_to_db(db_cursor, data):
-    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
 
 
 def __parse_single_url(arr):
@@ -269,7 +268,7 @@ def __parse_single_url(arr):
         if downloadPath != "":
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), downloadPath + "/" + data[0].replace("'", "’")])
+                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), downloadPath + "/" + data[0].replace("'", "’"), data[6]])
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
