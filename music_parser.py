@@ -233,7 +233,7 @@ def add_years(db_path):
     con = sqlite3.connect(db_path)
     db_cursor = con.cursor()
     try:
-        result = db_cursor.execute(f"SELECT rowid, title, artists FROM playlists WHERE year!=''").fetchall()
+        result = db_cursor.execute(f"SELECT rowid, title, artists FROM playlists WHERE year=''").fetchall()
     except:
         print_error("There have no empty years!")
         con.close()
@@ -243,8 +243,9 @@ def add_years(db_path):
 
     data = []
     pool = ThreadPool(config.threads)
+    print(f"### {len(result)}")
     for res in result:
-        data.append(db_path, res[0], res[1], res[2])
+        data.append([db_path, res[0], res[1], res[2]])
     pool.map(__add_year, data)
     pool.wait_completion()
 
@@ -262,8 +263,11 @@ def __add_year(arr):
             res = requests.get(f"{config.lastfm_root}?method=track.getInfo&track={title}&artist={artist}&api_key={config.lastfm_api_key}&format=json")
             try:
                 year = (json.loads(res.text))["track"]["wiki"]["published"].split(" ")[2].replace(",","")
-                break
+                if year:
+                    print_success(f"Found the year {year} for {title}")
+                    break
             except:
+                print(f"!!! it happened {title} {artist}")
                 pass
 
     else:
@@ -279,9 +283,10 @@ def __add_year(arr):
         db_cursor.execute(f"UPDATE playlists SET year='{year}' WHERE rowid={rowid}")
         con.commit()
         con.close()
-        print_success(f"Found the year {year} for {title}")
+        # print_success(f"Found the year {year} for {title}")
     else:
-        print_error(f"Didn't find a year for {title}")
+        pass
+        # print_error(f"Didn't find a year for {title}")
 
 
 def __get_new_yt_links(title, artist):
