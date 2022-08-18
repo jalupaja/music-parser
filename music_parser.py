@@ -354,7 +354,7 @@ def __parse_single_url(arr):
         if fail_counter == len(data_arr):
             print_error(f"couldn't save {url}")
         elif fail_counter > 0:
-            print_error(f"only saved {len(data_arr) - fail_counter} out of {len(data_arr)}")
+            print_error(f"only saved {len(data_arr) - fail_counter} out of {len(data_arr)} from {url}")
         else:
             print_success(f"parsed {url}")
 
@@ -380,16 +380,16 @@ def downloadVideo(arr):
         return
 
     if (file_path == ""):
-        folder = ""
-    else:
-        try:
-            os.mkdir(file_path)
-        except:
-            pass
-        folder = file_path + "/"
+        file_path = "unsorted"
+    try:
+        os.mkdir(file_path)
+    except:
+        pass
+    folder = file_path + "/"
 
     # TODO proxy this
     if not os.path.exists(f"{folder}{file_name}.mp3"):
+        print(f"{folder}{file_name}")
         if config.proxy_file != "":
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
         else:
@@ -407,7 +407,10 @@ if __name__ == '__main__':
             outputFile = sys.argv[i + 1]
             i += 1
         elif sys.argv[i] == "-d":
-            downloadPath = sys.argv[i + 1]
+            try:
+                downloadPath = sys.argv[i + 1]
+            except IndexError:
+                downloadPath = ""
             i += 1
         elif sys.argv[i] == "-gui":
             useGui = True
