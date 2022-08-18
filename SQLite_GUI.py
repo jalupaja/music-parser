@@ -8,6 +8,7 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QAction, QTableWidget,QTableWidgetItem,QVBoxLayout,QRadioButton,QTextEdit,QLabel,QPushButton,QMessageBox,QInputDialog
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot,Qt
+import os
 import sys
 import sqlite3
 
@@ -78,6 +79,47 @@ def tableButtonsChanged():
     renewing_table = False
 
 
+def move_file_folder(col, arr, replace):
+    if col == "playlist_name" and len(arr) > 1:
+        if (replace == ""):
+            replace = "unsorted"
+
+        if (arr[0][0] == ""):
+            from_path = f"unsorted"
+        else:
+            from_path = f"{arr[0][0]}"
+        if os.path.exists(from_path):
+            try:
+                os.rename(from_path, replace)
+            except:
+                pass
+    elif col == "playlist_name":
+        if arr[0][0] == "":
+            from_path = "unsorted"
+        else:
+            from_path = arr[0][0]
+        if replace == "":
+            replace = "unsorted"
+        try:
+            os.mkdir(replace)
+        except:
+            pass
+        os.rename(f"{from_path}/{arr[0][2]}.mp3", f"{replace}/{arr[0][2]}.mp3")
+    elif col == "title":
+        for item in arr:
+            if (item[1] == ""):
+                from_path = f"unsorted/{item[0]}.mp3"
+                replace_path = f"unsorted/{replace}.mp3"
+            else:
+                from_path = f"{item[1]}/{item[0]}.mp3"
+                replace_path = f"{item[1]}/{replace}.mp3"
+            if os.path.exists(from_path):
+                try:
+                    os.rename(from_path, replace_path)
+                except:
+                    pass
+
+
 def cellChanged(x, y):
     # fix for weird error when using tableButtonsChanged()
     if renewing_table or qTable.horizontalHeaderItem(y) is None:
@@ -85,11 +127,11 @@ def cellChanged(x, y):
 
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
-        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE rowid={qTable.item(x, 0).text()})").fetchall()
+        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},playlist_name,title,rowid FROM {__get_selected_table()} WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE rowid={qTable.item(x, 0).text()})").fetchall()
     except:
         return
 
-    if len(others) > 1 and not others[0]:
+    if len(others) > 1 and others[0][0]:
         msgBox = QMessageBox()
         msgBox.setText(f"There are {len(others) - 1} other items in '{qTable.horizontalHeaderItem(y).text()}'.\nDo you want to change all of them too?")
         msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
@@ -99,6 +141,7 @@ def cellChanged(x, y):
             db_execute(f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE {qTable.horizontalHeaderItem(y).text()}='{str(others[0][0])}'")
             db_commit()
             tableButtonsChanged()
+            move_file_folder(qTable.horizontalHeaderItem(y).text(), others, qTable.item(x, y).text())
             return
         elif res == QMessageBox.Cancel:
             qTable.cellChanged.disconnect()
@@ -108,6 +151,11 @@ def cellChanged(x, y):
 
     db_execute(f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE rowid={qTable.item(x, 0).text()}")
     db_commit()
+    item = []
+    for o in others:
+        if int(qTable.item(x, 0).text()) == int(o[3]):
+            move_file_folder(qTable.horizontalHeaderItem(y).text(), [o], qTable.item(x, y).text())
+            break
 
 
 def btn_push_ren_yt():
