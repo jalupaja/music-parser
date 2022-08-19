@@ -379,7 +379,7 @@ def downloadVideo(arr):
     if youtube_id == "":
         return
 
-    if (file_path == ""):
+    if file_path == "" or file_path == "./":
         file_path = "unsorted"
     try:
         os.mkdir(file_path)
@@ -389,7 +389,6 @@ def downloadVideo(arr):
 
     # TODO proxy this
     if not os.path.exists(f"{folder}{file_name}.mp3"):
-        print(f"{folder}{file_name}")
         if config.proxy_file != "":
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
         else:
