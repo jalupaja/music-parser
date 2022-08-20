@@ -98,7 +98,7 @@ def migrate_db(old_db_path, new_db_path):
     nDb = nCon.cursor()
 
     nDb.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
+            (playlist_name TEXT, title TEXT NOT NULL, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
 
     data_arr = oDb.execute("SELECT (playlist_name, title, artists, url, url_type, yt_link) FROM playlists").fetchall()
     nDb.close()
