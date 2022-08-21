@@ -126,7 +126,7 @@ def parse_urls(output_file, urls, download_path):
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append([data[5], data[1], download_path + "/" + data[0]])
+            down_arr.append([data[5], data[1], download_path + "/" + data[0], data[0], data[2], data[6]])
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
@@ -192,6 +192,16 @@ def __get_url_data(url):
         print_error("cannot parse " + site_name)
         return None
 
+def __update_file_metadata(playlist, title, artists, year):
+        path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
+        if title != "" and os.path.exists(path):
+            file = eyed3.load(path)
+            file.tag.album = playlist
+            file.tag.title = title
+            file.tag.artist = artists
+            file.tag.original_release_date = year
+            file.tag.save()
+
 
 def update_metadata(db_path, download_path):
     con = sqlite3.connect(db_path)
@@ -199,18 +209,7 @@ def update_metadata(db_path, download_path):
     os.chdir(download_path)
     arr = db.execute("SELECT playlist_name,title,artists,year FROM playlists").fetchall()
     for data in arr:
-        path = f"{data[0]}/{data[1].replace('/', '|')}.mp3" if data[0] and data[0] != "./" else f"unsorted/{data[1].replace('/', '|')}.mp3"
-        print(path)
-        if data[1] != "" and os.path.exists(path):
-            file = eyed3.load(path)
-            file.tag.album = data[0]
-            file.tag.title = data[1]
-            file.tag.artist = data[2]
-            file.tag.original_release_date = data[3]
-            file.tag.save()
-        else:
-            print(f"problem: {data[1]}")
-    print(os.getcwd())
+        __update_file_metadata(data[0], data[1], data[2], data[3])
     con.commit()
     con.close()
 
@@ -248,7 +247,7 @@ def search_manual(db_path, search, what_to_search="title"):
 
 
 def add_years(db_path):
-
+    # This function is not yet finished and will probably not work well
     if not config.lastfm_api_key:
         print_error("Please get an API key from last.fm and set it to the variable lastfm_api_key in config.py")
 
@@ -354,7 +353,7 @@ def __parse_single_url(arr):
         if download_path != "":
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), download_path + "/" + data[0].replace("'", "’"), data[6]])
+                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), download_path + "/" + data[0].replace("'", "’"), data[0], data[2], data[6]])
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
@@ -397,6 +396,9 @@ def downloadVideo(arr):
     youtube_id = arr[0]
     file_name = arr[1].replace("/", "|")
     file_path = arr[2]
+    playlist = arr[3]
+    artists = arr[4]
+    year = arr[5]
 
     if youtube_id == "":
         return
@@ -415,6 +417,7 @@ def downloadVideo(arr):
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
         else:
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3", shell=True)
+        __update_file_metadata(playlist, file_name, artists, year)
 
 
 if __name__ == '__main__':
