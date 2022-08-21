@@ -8,6 +8,7 @@
 from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QAction, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog
 from PyQt5.QtGui import QIcon
 from PyQt5.QtCore import pyqtSlot, Qt
+import eyed3
 import os
 import sys
 import sqlite3
@@ -105,55 +106,75 @@ def tableButtonsChanged():
     __update_search()
 
 
-def move_file_folder(col, arr, replace):
+def edit_file_folder(col, arr, replace):
+    if (arr[0][0] == ""):
+        from_path = "unsorted"
+    else:
+        from_path = f"{arr[0][0]}"
+
     if col == "playlist_name" and len(arr) > 1:
         if (replace == ""):
             replace = "unsorted"
 
-        if (arr[0][0] == ""):
-            from_path = f"unsorted"
-        else:
-            from_path = f"{arr[0][0]}"
         if os.path.exists(from_path):
             try:
                 os.rename(from_path, replace)
             except:
                 pass
+            for f in os.listdir(replace):
+                if f.endswith("mp3"):
+                    file = eyed3.load(f"{replace}/{f}")
+                    file.tag.album = replace
+                    file.tag.save()
     elif col == "playlist_name":
-        if arr[0][0] == "":
-            from_path = "unsorted"
-        else:
-            from_path = arr[0][0]
         if replace == "":
             replace = "unsorted"
         try:
             os.mkdir(replace)
         except:
             pass
-        os.rename(f"{from_path}/{arr[0][2]}.mp3", f"{replace}/{arr[0][2]}.mp3")
+        try:
+            os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+        except:
+            pass
+        file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+        file.tag.album = replace
+        file.tag.save()
     elif col == "title":
         for item in arr:
             if (item[1] == ""):
-                from_path = f"unsorted/{item[0]}.mp3"
-                replace_path = f"unsorted/{replace}.mp3"
+                from_path = f"unsorted/{item[0].replace('/', '|')}.mp3"
+                replace_path = f"unsorted/{replace.replace('/', '|')}.mp3"
             else:
-                from_path = f"{item[1]}/{item[0]}.mp3"
-                replace_path = f"{item[1]}/{replace}.mp3"
+                from_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
+                replace_path = f"{item[1]}/{replace.replace('/', '|')}.mp3"
             if item[0] != "" and replace != "" and os.path.exists(from_path):
                 try:
                     os.rename(from_path, replace_path)
                 except:
                     pass
+                file = eyed3.load(replace_path)
+                file.tag.title = replace
+                file.tag.save()
     elif col == "yt_link":
-        if (arr[0][1] == ""):
-            path = f"unsorted/{arr[0][2]}.mp3"
-        else:
-            path = f"{arr[0][1]}/{arr[0][2]}.mp3"
+        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
         if arr[0][2] != "" and os.path.exists(path):
             try:
                 os.remove(path)
             except:
                 pass
+    elif col == "artists":
+        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
+        if arr[0][2] != "" and os.path.exists(path):
+            file = eyed3.load(path)
+            file.tag.artist = replace
+            file.tag.save()
+    elif col == "year":
+        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
+        if arr[0][2] != "" and os.path.exists(path):
+            file = eyed3.load(path)
+            file.tag.original_release_date = replace
+            file.tag.save()
 
 
 def cellChanged(x, y):
@@ -177,7 +198,7 @@ def cellChanged(x, y):
             db_execute(f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE {qTable.horizontalHeaderItem(y).text()}='{str(others[0][0])}'")
             db_commit()
             tableButtonsChanged()
-            move_file_folder(qTable.horizontalHeaderItem(y).text(), others, qTable.item(x, y).text())
+            edit_file_folder(qTable.horizontalHeaderItem(y).text(), others, qTable.item(x, y).text())
             return
         elif res == QMessageBox.Cancel:
             qTable.cellChanged.disconnect()
@@ -191,7 +212,7 @@ def cellChanged(x, y):
     item = []
     for o in others:
         if int(qTable.item(x, 0).text()) == int(o[3]):
-            move_file_folder(qTable.horizontalHeaderItem(y).text(), [o], qTable.item(x, y).text())
+            edit_file_folder(qTable.horizontalHeaderItem(y).text(), [o], qTable.item(x, y).text())
             break
 
 
@@ -212,9 +233,9 @@ def btn_push_del():
         db_commit()
         qTable.removeRow(row)
         if (playlist == ""):
-            from_path = f"unsorted/{title}.mp3"
+            from_path = f"unsorted/{title.replace('/', '|')}.mp3"
         else:
-            from_path = f"{playlist}/{title}.mp3"
+            from_path = f"{playlist}/{title.replace('/', '|')}.mp3"
         if os.path.exists(from_path):
             try:
                 os.remove(from_path)

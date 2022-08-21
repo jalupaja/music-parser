@@ -7,6 +7,7 @@ import json
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
+import eyed3
 import random
 from queue import Queue
 from threading import Thread
@@ -109,28 +110,28 @@ def migrate_db(old_db_path, new_db_path):
     oDb.close()
 
 
-def parse_urls(outputFile, urls, downloadPath):
+def parse_urls(output_file, urls, download_path):
     pool = ThreadPool(40)
     try:
-        con = sqlite3.connect(outputFile)
+        con = sqlite3.connect(output_file)
         db = con.cursor()
         db.execute('''CREATE TABLE IF NOT EXISTS playlists
             (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
     except:
-        print_error("cannot parse " + outputFile)
-        return "cannot parse " + outputFile
+        print_error("cannot parse " + output_file)
+        return "cannot parse " + output_file
 
-    # if url is empty, and downloadPath is given -> download the whole database
-    if len(urls) == 0 and downloadPath != "":
+    # if url is empty, and download_path is given -> download the whole database
+    if len(urls) == 0:
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append([data[5], data[1], downloadPath + "/" + data[0]])
+            down_arr.append([data[5], data[1], download_path + "/" + data[0]])
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
         for url in urls:
-            arr.append([url, downloadPath, outputFile, pool])
+            arr.append([url, download_path, output_file, pool])
 
         pool.map(__parse_single_url, arr)
 
@@ -192,6 +193,28 @@ def __get_url_data(url):
         return None
 
 
+def update_metadata(db_path, download_path):
+    con = sqlite3.connect(db_path)
+    db = con.cursor()
+    os.chdir(download_path)
+    arr = db.execute("SELECT playlist_name,title,artists,year FROM playlists").fetchall()
+    for data in arr:
+        path = f"{data[0]}/{data[1].replace('/', '|')}.mp3" if data[0] else f"unsorted/{data[1].replace('/', '|')}.mp3"
+        print(path)
+        if data[1] != "" and os.path.exists(path):
+            file = eyed3.load(path)
+            file.tag.album = data[0]
+            file.tag.title = data[1]
+            file.tag.artist = data[2]
+            file.tag.original_release_date = data[3]
+            file.tag.save()
+        else:
+            print(f"problem: {data[1]}")
+    print(os.getcwd())
+    con.commit()
+    con.close()
+
+
 def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_link, year):
     con = sqlite3.connect(db_path)
     db = con.cursor()
@@ -200,7 +223,6 @@ def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_l
     con.close()
 
 
-# TODO add functions: add_url_playlist, search..., copy_to_playlist
 def __search_db(db_cursor, search, what_to_search):
     return db_cursor.execute(f"SELECT rowid, * FROM playlists WHERE {what_to_search} LIKE '{search}'").fetchall()
 
@@ -285,8 +307,8 @@ def __add_year(arr):
         con.close()
         # print_success(f"Found the year {year} for {title}")
     else:
-        pass
         # print_error(f"Didn't find a year for {title}")
+        pass
 
 
 def __get_new_yt_links(title, artist):
@@ -321,7 +343,7 @@ def __add_to_db(db_cursor, data):
 
 def __parse_single_url(arr):
     url = arr[0]
-    downloadPath = arr[1]
+    download_path = arr[1]
     con = sqlite3.connect(arr[2])
     db = con.cursor()
     pool = arr[3]
@@ -329,10 +351,10 @@ def __parse_single_url(arr):
     data_arr = __get_url_data(url)
 
     if data_arr is not None or len(data_arr) == 0:
-        if downloadPath != "":
+        if download_path != "":
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), downloadPath + "/" + data[0].replace("'", "’"), data[6]])
+                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), download_path + "/" + data[0].replace("'", "’"), data[6]])
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
@@ -398,18 +420,18 @@ def downloadVideo(arr):
 if __name__ == '__main__':
     i = 1
     urls = []
-    outputFile = "db.db"
-    downloadPath = ""
+    output_file = "db.db"
+    download_path = ""
     useGui = False
     while i < len(sys.argv):
         if sys.argv[i] == "-db":
-            outputFile = sys.argv[i + 1]
+            output_file = sys.argv[i + 1]
             i += 1
         elif sys.argv[i] == "-d":
             try:
-                downloadPath = sys.argv[i + 1]
+                download_path = sys.argv[i + 1]
             except IndexError:
-                downloadPath = ""
+                download_path = ""
             i += 1
         elif sys.argv[i] == "-gui":
             useGui = True
@@ -420,13 +442,21 @@ if __name__ == '__main__':
             urls.append(sys.argv[i])
         i += 1
 
+    if download_path == "":
+        path = output_file.split("/")
+        path.pop(-1)
+        if len(path) > 0:
+            os.chdir("/".join(path))
+    else:
+        os.chdir(download_path)
+
     if config.proxy_file != "":
         proxy_file = open(config.proxy_file, 'r')
 
     if useGui:
-        SQLite_GUI.main(outputFile, urls, downloadPath)
+        SQLite_GUI.main(output_file, urls, ".")
     else:
-        parse_urls(outputFile, urls, downloadPath)
+        parse_urls(output_file, urls, ".")
 
     if config.proxy_file != "":
         proxy_file.close()
