@@ -139,11 +139,21 @@ def move_file_folder(col, arr, replace):
             else:
                 from_path = f"{item[1]}/{item[0]}.mp3"
                 replace_path = f"{item[1]}/{replace}.mp3"
-            if os.path.exists(from_path):
+            if item[0] != "" and replace != "" and os.path.exists(from_path):
                 try:
                     os.rename(from_path, replace_path)
                 except:
                     pass
+    elif col == "yt_link":
+        if (arr[0][1] == ""):
+            path = f"unsorted/{arr[0][2]}.mp3"
+        else:
+            path = f"{arr[0][1]}/{arr[0][2]}.mp3"
+        if arr[0][2] != "" and os.path.exists(path):
+            try:
+                os.remove(path)
+            except:
+                pass
 
 
 def cellChanged(x, y):
@@ -196,6 +206,8 @@ def btn_push_del():
     if res == QMessageBox.Yes:
         playlist = qTable.item(row, 1).text()
         title = qTable.item(row, 2).text()
+        if title == "":
+            return
         db_execute(f"DELETE FROM {__get_selected_table()} WHERE rowid={qTable.item(row, 0).text()}")
         db_commit()
         qTable.removeRow(row)
