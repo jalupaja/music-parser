@@ -199,7 +199,7 @@ def update_metadata(db_path, download_path):
     os.chdir(download_path)
     arr = db.execute("SELECT playlist_name,title,artists,year FROM playlists").fetchall()
     for data in arr:
-        path = f"{data[0]}/{data[1].replace('/', '|')}.mp3" if data[0] else f"unsorted/{data[1].replace('/', '|')}.mp3"
+        path = f"{data[0]}/{data[1].replace('/', '|')}.mp3" if data[0] and data[0] != "./" else f"unsorted/{data[1].replace('/', '|')}.mp3"
         print(path)
         if data[1] != "" and os.path.exists(path):
             file = eyed3.load(path)

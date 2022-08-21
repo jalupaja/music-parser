@@ -107,10 +107,7 @@ def tableButtonsChanged():
 
 
 def edit_file_folder(col, arr, replace):
-    if (arr[0][0] == ""):
-        from_path = "unsorted"
-    else:
-        from_path = f"{arr[0][0]}"
+    from_path = arr[0][0] if arr[0][0] and arr[0][0] != "./" else "unsorted"
 
     if col == "playlist_name" and len(arr) > 1:
         if (replace == ""):
@@ -142,15 +139,11 @@ def edit_file_folder(col, arr, replace):
         file.tag.save()
     elif col == "title":
         for item in arr:
-            if (item[1] == ""):
-                from_path = f"unsorted/{item[0].replace('/', '|')}.mp3"
-                replace_path = f"unsorted/{replace.replace('/', '|')}.mp3"
-            else:
-                from_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
-                replace_path = f"{item[1]}/{replace.replace('/', '|')}.mp3"
-            if item[0] != "" and replace != "" and os.path.exists(from_path):
+            from_file_path = f"{from_path}/{item[0].replace('/', '|')}.mp3"
+            replace_path = f"{from_path}/{replace.replace('/', '|')}.mp3"
+            if item[0] != "" and replace != "" and os.path.exists(from_file_path):
                 try:
-                    os.rename(from_path, replace_path)
+                    os.rename(from_file_path, replace_path)
                 except:
                     pass
                 file = eyed3.load(replace_path)
@@ -232,10 +225,7 @@ def btn_push_del():
         db_execute(f"DELETE FROM {__get_selected_table()} WHERE rowid={qTable.item(row, 0).text()}")
         db_commit()
         qTable.removeRow(row)
-        if (playlist == ""):
-            from_path = f"unsorted/{title.replace('/', '|')}.mp3"
-        else:
-            from_path = f"{playlist}/{title.replace('/', '|')}.mp3"
+        from_path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
         if os.path.exists(from_path):
             try:
                 os.remove(from_path)
