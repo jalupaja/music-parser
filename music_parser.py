@@ -110,7 +110,7 @@ def migrate_db(old_db_path, new_db_path):
     oDb.close()
 
 
-def parse_urls(output_file, urls, download_path):
+def parse_urls(output_file, urls, download_files=False):
     pool = ThreadPool(40)
     try:
         con = sqlite3.connect(output_file)
@@ -122,16 +122,16 @@ def parse_urls(output_file, urls, download_path):
         return "cannot parse " + output_file
 
     # if url is empty, and download_path is given -> download the whole database
-    if len(urls) == 0:
+    if download_files and len(urls) == 0:
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append([data[5], data[1], download_path + "/" + data[0], data[0], data[2], data[6]])
+            down_arr.append([data[5], data[1], data[0], data[2], data[6]])
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
         for url in urls:
-            arr.append([url, download_path, output_file, pool])
+            arr.append([url, output_file, pool, download_files])
 
         pool.map(__parse_single_url, arr)
 
@@ -168,7 +168,11 @@ def __get_url_data(url):
     soup = BeautifulSoup(req.text, "html.parser")
 
     # create database table if it doesn't exist
-    site_name = soup.find("title").decode_contents().rsplit(None, 1)[-1]
+    try:
+        site_name = soup.find("title").decode_contents().rsplit(None, 1)[-1]
+    except:
+        return None
+
     if site_name == "Spotify":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
@@ -191,6 +195,7 @@ def __get_url_data(url):
     else:
         print_error("cannot parse " + site_name)
         return None
+
 
 def __update_file_metadata(playlist, title, artists, year):
         path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
@@ -342,18 +347,19 @@ def __add_to_db(db_cursor, data):
 
 def __parse_single_url(arr):
     url = arr[0]
-    download_path = arr[1]
-    con = sqlite3.connect(arr[2])
+    con = sqlite3.connect(arr[1])
     db = con.cursor()
-    pool = arr[3]
+    pool = arr[2]
+    download_files = arr[3]
 
     data_arr = __get_url_data(url)
 
-    if data_arr is not None or len(data_arr) == 0:
-        if download_path != "":
+    if data_arr is not None and len(data_arr) != 0:
+        if download_files:
+            exit()
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), download_path + "/" + data[0].replace("'", "’"), data[0], data[2], data[6]])
+                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), data[0], data[2], data[6]])
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
@@ -395,21 +401,20 @@ def __get_proxy():
 def downloadVideo(arr):
     youtube_id = arr[0]
     file_name = arr[1].replace("/", "|")
-    file_path = arr[2]
-    playlist = arr[3]
-    artists = arr[4]
-    year = arr[5]
+    playlist = arr[2]
+    artists = arr[3]
+    year = arr[4]
 
     if youtube_id == "":
         return
 
-    if file_path == "" or file_path == "./":
-        file_path = "unsorted"
+    if playlist == "" or playlist == "./":
+        playlist = "unsorted"
     try:
-        os.mkdir(file_path)
+        os.mkdir(playlist.replace("'", "’"))
     except:
         pass
-    folder = file_path + "/"
+    folder = playlist.replace("'", "’") + "/"
 
     # TODO proxy this
     if not os.path.exists(f"{folder}{file_name}.mp3"):
@@ -434,7 +439,7 @@ if __name__ == '__main__':
             try:
                 download_path = sys.argv[i + 1]
             except IndexError:
-                download_path = ""
+                download_path = "."
             i += 1
         elif sys.argv[i] == "-gui":
             useGui = True
@@ -445,21 +450,21 @@ if __name__ == '__main__':
             urls.append(sys.argv[i])
         i += 1
 
-    if download_path == "":
+    if download_path == ".":
         path = output_file.split("/")
         path.pop(-1)
         if len(path) > 0:
             os.chdir("/".join(path))
-    else:
+    elif download_path != "":
         os.chdir(download_path)
 
     if config.proxy_file != "":
         proxy_file = open(config.proxy_file, 'r')
 
     if useGui:
-        SQLite_GUI.main(output_file, urls, ".")
+        SQLite_GUI.main(output_file, urls)
     else:
-        parse_urls(output_file, urls, ".")
+        parse_urls(output_file, urls, download_path != "")
 
     if config.proxy_file != "":
         proxy_file.close()

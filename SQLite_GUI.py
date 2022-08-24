@@ -283,7 +283,7 @@ def btn_push_links(abc, links=[]):
     lbl_sql_ret.setVisible(True)
     lbl_sql_ret.setText("Loading...")
 
-    lbl_sql_ret.setText(str(music_parser.parse_urls(databasePath, links, downloadPath)))
+    lbl_sql_ret.setText(str(music_parser.parse_urls(database_path, links)))
     tableButtonsChanged()
 
 
@@ -297,7 +297,7 @@ def db_commit():
     con.commit()
 
 
-def main(databaseLink, urls=[], download=""):
+def main(database_link, urls=[]):
     global con
     global db
     global tableButtons
@@ -305,19 +305,16 @@ def main(databaseLink, urls=[], download=""):
     global qTable
     global txt_sql_field
     global lbl_sql_ret
+    global database_path
 
-    global databasePath
-    global downloadPath
-
-    databasePath = databaseLink
-    downloadPath = download
+    database_path = database_link
 
     app = QApplication([])
     window = QWidget()
     layout = QVBoxLayout(window)
     try:
         # CHANGE_HERE:
-        con = sqlite3.connect(databaseLink)
+        con = sqlite3.connect(database_link)
         db = con.cursor()
     except:
         print_error("Couldn't connect to database!")
@@ -377,10 +374,3 @@ def main(databaseLink, urls=[], download=""):
         btn_push_links("", urls)
 
     sys.exit(app.exec_())
-
-
-if __name__=="__main__":
-    if len(sys.argv) > 1:
-        main(sys.argv[1], [], sys.argv)
-    else:
-        print_error("You have to give a link to the database")
