@@ -139,9 +139,9 @@ def edit_file_folder(col, arr, replace):
         file.tag.save()
     elif col == "title":
         for item in arr:
-            from_file_path = f"{from_path}/{item[0].replace('/', '|')}.mp3"
-            replace_path = f"{from_path}/{replace.replace('/', '|')}.mp3"
-            if item[0] != "" and replace != "" and os.path.exists(from_file_path):
+            from_file_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
+            replace_path = f"{item[1]}/{replace.replace('/', '|')}.mp3"
+            if item[2] != "" and replace != "" and os.path.exists(from_file_path):
                 try:
                     os.rename(from_file_path, replace_path)
                 except:
