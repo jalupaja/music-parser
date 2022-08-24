@@ -206,6 +206,8 @@ def __update_file_metadata(playlist, title, artists, year):
             file.tag.artist = artists
             file.tag.original_release_date = year
             file.tag.save()
+        else:
+            print_error(f"{path} does not exist")
 
 
 def update_metadata(db_path, download_path):
