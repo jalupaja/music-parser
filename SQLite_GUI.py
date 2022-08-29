@@ -126,17 +126,18 @@ def edit_file_folder(col, arr, replace):
     elif col == "playlist_name":
         if replace == "":
             replace = "unsorted"
-        try:
-            os.mkdir(replace)
-        except:
-            pass
-        try:
-            os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-        except:
-            pass
-        file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-        file.tag.album = replace
-        file.tag.save()
+        if arr[0][2] != "" and os.path.exists(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"):
+            try:
+                os.mkdir(replace)
+            except:
+                pass
+            try:
+                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            except:
+                pass
+            file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            file.tag.album = replace
+            file.tag.save()
     elif col == "title":
         for item in arr:
             from_file_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
