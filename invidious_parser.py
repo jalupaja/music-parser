@@ -2,8 +2,45 @@
 
 import requests
 import json
+import re
 from bs4 import BeautifulSoup
 import config
+
+
+def __fix_yt_title(title):
+    if not config.fix_yt_title_artist:
+        return title
+    q = re.search("(‘.*’|'.*'’|\".*\")", title)
+    if q:
+        title = title[q.span()[0] + 1:q.span()[1] - 1]
+        # title = title[:q.span()[0]] + title[q.span()[0] + 1:q.span()[1] - 1] + title[q.span()[1]:].strip()
+    else:
+        title = re.sub("\(.*\)", "", title)
+
+        dash = re.search(" - ", title)
+        if dash:
+            ntitle = title[dash.span()[1]:].strip()
+            if ntitle != "":
+                title = ntitle
+
+        feat = re.search(" (ft|feat|featuring)\.? ", title.lower())
+        if feat:
+            ntitle = title[0:feat.span()[0]].strip()
+            if ntitle != "":
+                title = ntitle
+
+        mv = re.search(" ?\[?M\/?V\]? ?", title)
+        if mv:
+            title = title[0:mv.span()[0]] + title[mv.span()[1]:]
+
+    return title.strip()
+
+
+def __fix_yt_artist(artist):
+    if not config.fix_yt_title_artist:
+        return artist
+    return artist.replace("VEVO", "").replace(" - Topic", "")
+
 
 def add_playlist(text):
     playlistName = text.find("div", config.invidious_playlist_div).find("h3").decode_contents()
@@ -12,8 +49,8 @@ def add_playlist(text):
     ret = []
 
     for track in tracks:
-        title = track.find("p", "").decode_contents()
-        artist = track.find("p", "channel-name").decode_contents()
+        title = __fix_yt_title(track.find("p", "").decode_contents())
+        artist = __fix_yt_artist(track.find("p", "channel-name").decode_contents())
         # TODO remove feat. ... from title to artists
         # TODO parse title for music videos (remove MV, feat, ..)
         url = track.find("div", "icon-buttons").find("a")['href'].replace("https://www.youtube.com/watch?v=", "").split("&", 1)[0]
@@ -24,9 +61,9 @@ def add_playlist(text):
 
 def add_vid(text):
     title_h1 = text.find("h1")
-    title = title_h1.decode_contents().split("\n", 2)[1].strip()
+    title = __fix_yt_title(title_h1.decode_contents().split("\n", 2)[1].strip())
     url = title_h1.find("a")['href'].replace("/watch?v=", "").split("&", 1)[0]
-    artists = text.find("div", config.invidious_vid_link).find("span").decode_contents().split("<", 1)[0].strip()
+    artists = __fix_yt_artist(text.find("div", config.invidious_vid_link).find("span").decode_contents().split("<", 1)[0].strip())
     year = text.find("div", config.invidious_vid_date_div).find("p", id="published-date").find("b").decode_contents().split(" ")[-1]
     return [["", title, artists, url, "yt", url, year]]
 
