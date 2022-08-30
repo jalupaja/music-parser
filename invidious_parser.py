@@ -15,6 +15,7 @@ def __fix_yt_title(title):
         # title = title[:q.span()[0]] + title[q.span()[0] + 1:q.span()[1] - 1] + title[q.span()[1]:].strip()
     else:
         title = re.sub("\(.*\)", "", title)
+        title = re.sub("\[.*\]", "", title)
 
         dash = re.search(" - ", title)
         if dash:
@@ -28,7 +29,7 @@ def __fix_yt_title(title):
             if ntitle != "":
                 title = ntitle
 
-        mv = re.search(" ?\[?M\/?V\]? ?", title)
+        mv = re.search(" ?M\/?V ?", title)
         if mv:
             title = title[0:mv.span()[0]] + title[mv.span()[1]:]
 
