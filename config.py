@@ -41,7 +41,3 @@ fix_yt_title_artist = True
 ## set the variable below to a file containing http procies in order to use them to download content
 ## There is a problem that if the proxy doesn't work, the error will only be shown in the console.
 proxy_file = ""
-
-## last.fm
-lastfm_root = "http://ws.audioscrobbler.com/2.0"
-lastfm_api_key = ""

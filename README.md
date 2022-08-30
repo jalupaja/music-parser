@@ -35,7 +35,6 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 | `add_manual_track(db_path, playlist_name, title, url, url_type, yt_link)` | this will add a new entry to the database without utilizing the internet
 | `search_manual(db_path, search, what_to-search="title")` | this will search the given `search` term in the given database
 | `renew_yt_link(db_path, rowid, yt_link="")` | this will either set the `yt_link` of the given `rowid` or output the top five results given by YouTube and let the user decide which one to pick
-| `add_years(db_path)` | this will manually set all empty year rows but it needds a last.fm api key
 | `update_metadata(db_path, download_path)` | this will update all metadata of the downloaded files 
 
 

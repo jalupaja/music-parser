@@ -253,31 +253,6 @@ def search_manual(db_path, search, what_to_search="title"):
     con.close()
 
 
-def add_years(db_path):
-    # This function is not yet finished and will probably not work well
-    if not config.lastfm_api_key:
-        print_error("Please get an API key from last.fm and set it to the variable lastfm_api_key in config.py")
-
-    con = sqlite3.connect(db_path)
-    db_cursor = con.cursor()
-    try:
-        result = db_cursor.execute(f"SELECT rowid, title, artists FROM playlists WHERE year=''").fetchall()
-    except:
-        print_error("There have no empty years!")
-        con.close()
-        return 0
-
-    con.close()
-
-    data = []
-    pool = ThreadPool(config.threads)
-    print(f"### {len(result)}")
-    for res in result:
-        data.append([db_path, res[0], res[1], res[2]])
-    pool.map(__add_year, data)
-    pool.wait_completion()
-
-
 def __add_year(arr):
     rowid = arr[1]
     title = arr[2]
