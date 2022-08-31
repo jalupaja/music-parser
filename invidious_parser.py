@@ -33,6 +33,9 @@ def __fix_yt_title(title):
         if mv:
             title = title[0:mv.span()[0]] + title[mv.span()[1]:]
 
+        if " | " in title:
+            title = title.split(" | ")[0]
+
     return title.strip()
 
 
