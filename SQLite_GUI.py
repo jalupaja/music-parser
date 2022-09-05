@@ -108,24 +108,21 @@ def tableButtonsChanged():
 
 def edit_file_folder(col, arr, replace):
     from_path = arr[0][0] if arr[0][0] and arr[0][0] != "./" else "unsorted"
+    if replace == "":
+        replace = "unsorted"
 
     if col == "playlist_name" and len(arr) > 1:
-        if (replace == ""):
-            replace = "unsorted"
-
         if os.path.exists(from_path):
-            try:
-                os.rename(from_path, replace)
-            except:
-                pass
             for f in os.listdir(replace):
                 if f.endswith("mp3"):
                     file = eyed3.load(f"{replace}/{f}")
                     file.tag.album = replace
                     file.tag.save()
+                try:
+                    os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+                except:
+                    pass
     elif col == "playlist_name":
-        if replace == "":
-            replace = "unsorted"
         if arr[0][2] != "" and os.path.exists(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"):
             try:
                 os.mkdir(replace)
