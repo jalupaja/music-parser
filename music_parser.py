@@ -141,7 +141,8 @@ def parse_urls(output_file, urls, download_files=False):
     else:
         arr = []
         for url in urls:
-            arr.append([url, output_file, pool, download_files])
+            if url.strip():
+                arr.append([url, output_file, pool, download_files])
 
         pool.map(__parse_single_url, arr)
 
