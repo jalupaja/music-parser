@@ -359,7 +359,9 @@ def __parse_single_url(arr):
                         if config.use_invidious:
                             data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[2].replace("'", "’") + " " + data[1].replace("'", "’") + " music video")
                         else:
-                            data[5] = youtube_music_parser.search_yt_id(__get_ytmusic(), data[2].replace("'", "’") + " " + data[1].replace("'", "’"))
+                            data[5], year = youtube_music_parser.search_yt_id(__get_ytmusic(), data[2].replace("'", "’") + " " + data[1].replace("'", "’"))
+                            if year:
+                                data[6] = year
                 except:
                     data[5] = ""
                 try:

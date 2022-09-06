@@ -42,6 +42,7 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 > What I might add in the future if I find the motivation
 
 - move GUI in separate Thread to be able to search and use gui at the same time
+- create own implementation of ytmusicapi
 - ability to subscripe to artists
 - ability to login to spotify and parse all subscribed playlists
 - add unicode support
