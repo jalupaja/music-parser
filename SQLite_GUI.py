@@ -122,6 +122,11 @@ def edit_file_folder(col, arr, replace):
                     os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
                 except:
                     pass
+            # delete folder if empty
+            try:
+                os.removedirs(from_path)
+            except:
+                pass
     elif col == "playlist_name":
         if arr[0][2] != "" and os.path.exists(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"):
             try:
