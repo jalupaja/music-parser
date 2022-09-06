@@ -31,6 +31,14 @@ def add_track(text, url):
     title = text.title.decode_contents()[:text.title.decode_contents().rfind(" - ")]
     artists = text.title.decode_contents()[text.title.decode_contents().rfind(" - ") + 8 :text.title.decode_contents().rfind(" | ")]
     url = url[url.index("track/") + 6:]
-    year = text.find("meta", property="music:release_date")["content"].split("-")[0]
+
+    meta_tags = text.findAll("meta")
+
+    for m in meta_tags:
+        try:
+            if "release_date" in m['name']:
+                year = m['content'].split("-")[0]
+        except:
+            pass
 
     return [["", title, artists, url, "spotify", "", year]]
