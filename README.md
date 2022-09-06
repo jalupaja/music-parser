@@ -42,9 +42,8 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 > What I might add in the future if I find the motivation
 
 - move GUI in separate Thread to be able to search and use gui at the same time
-- ability to parse artists and add them to a 'subscriptions' database
-- ability to parse login to spotify and parse all subscribed playlists
+- ability to subscripe to artists
+- ability to login to spotify and parse all subscribed playlists
 - add unicode support
-- add a cli and gui search option that is useable
-- parse YouTube Video titles better (remove junk like: "M/V", "feat. ...", ...)
+- add a cli search options
 - change gui layout to something more useable
