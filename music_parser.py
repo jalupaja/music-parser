@@ -11,10 +11,12 @@ import eyed3
 import random
 from queue import Queue
 from threading import Thread
+from ytmusicapi import YTMusic
 
 import config
 import spotify_parser
 import invidious_parser
+import youtube_music_parser
 import SQLite_GUI
 
 
@@ -65,6 +67,7 @@ def print_success(text):
 
 __current_invidious_instance = ""
 __current_invidious_counter = 0
+ytmusic = None
 
 
 def __get_invidious_instance(i=3):
@@ -90,6 +93,13 @@ def __get_invidious_instance(i=3):
     else:
         __current_invidious_counter -= 1
     return __current_invidious_instance
+
+
+def __get_ytmusic():
+    global ytmusic
+    if not ytmusic:
+        ytmusic = YTMusic()
+    return ytmusic
 
 
 def migrate_db(old_db_path, new_db_path):
@@ -173,7 +183,7 @@ def __get_url_data(url):
     except:
         return None
 
-    if site_name == "Spotify":
+    if site_name == "Spotify" or site_name == "Playlist":
         site_about = soup.find("meta", property="og:type")["content"]
         if site_about == "music.playlist" or site_about == "music.album":
             arr = spotify_parser.add_playlist(soup)
@@ -270,7 +280,6 @@ def __add_year(arr):
                     print_success(f"Found the year {year} for {title}")
                     break
             except:
-                print(f"!!! it happened {title} {artist}")
                 pass
 
     else:
@@ -293,7 +302,10 @@ def __add_year(arr):
 
 
 def __get_new_yt_links(title, artist):
-    return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} music video")
+    if config.use_invidious:
+        return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} music video")
+    else:
+        return youtube_music_parser.__search_yt(__get_ytmusic(), f"{title} {artist}")
 
 
 def renew_yt_link(db_path, id, yt_link=""):
@@ -344,7 +356,10 @@ def __parse_single_url(arr):
             if len(db.execute("SELECT title FROM playlists WHERE playlist_name='" + data[0].replace("'", "’") + "' AND title='" + data[1].replace("'", "’") + "'").fetchall()) < 1:
                 try:
                     if data[5] == "":
-                        data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[2].replace("'", "’") + " " + data[1].replace("'", "’") + " music video")
+                        if config.use_invidious:
+                            data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[2].replace("'", "’") + " " + data[1].replace("'", "’") + " music video")
+                        else:
+                            data[5] = youtube_music_parser.search_yt_id(__get_ytmusic(), data[2].replace("'", "’") + " " + data[1].replace("'", "’"))
                 except:
                     data[5] = ""
                 try:

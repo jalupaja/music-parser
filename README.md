@@ -1,5 +1,5 @@
 # music parser
-> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (using the Invidious). It can also download the songs to mp3 files using yt-dlp
+> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (either YouTube Music or Invidious). It can also download the songs to mp3 files using yt-dlp
 
 
 ## installation

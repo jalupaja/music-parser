@@ -14,6 +14,7 @@ import sys
 import sqlite3
 
 import music_parser
+import config
 
 
 def print_error(text):
@@ -249,8 +250,17 @@ def btn_push_ren_yt():
     res = music_parser.__get_new_yt_links(title, artist)
 
     question = ""
-    for i in range(5):
-        question += f"({i + 1}) '{res[i]['title']} by '{res[i]['author']} : {res[i]['videoId']}\n"
+    if config.use_invidious:
+        for i in range(5):
+            question += f"({i + 1}) '{res[i]['title']} by '{res[i]['author']} : {res[i]['videoId']}\n"
+    else:
+        j = 1
+        for i in range(5):
+            try:
+                question += f"({j}) '{res[i]['title']} by '{res[i]['artists'][0]['name']} : {res[i]['videoId']}\n"
+                j += 1
+            except:
+                pass
 
     i = QInputDialog.getText(qTable, "renew YouTube link", question)[0]
 

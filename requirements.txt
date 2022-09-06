@@ -3,3 +3,4 @@ requests>=2.27
 bs4>=0.0.1
 aiosqlite>=0.17.0
 eyed3>=0.9.6
+ytmusicapi>=0.22.0
