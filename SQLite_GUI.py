@@ -140,6 +140,10 @@ def edit_file_folder(col, arr, replace):
             file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
             file.tag.album = replace
             file.tag.save()
+            try:
+                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            except:
+                pass
     elif col == "title":
         for item in arr:
             from_file_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
