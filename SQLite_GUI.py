@@ -5,9 +5,9 @@
 
 # TODO change layout and overall looks (will probably never happen...)
 
-from PyQt5.QtWidgets import QMainWindow, QApplication, QWidget, QAction, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot, Qt
+from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import pyqtSlot, Qt
 import eyed3
 import os
 import sys
@@ -36,7 +36,7 @@ def search(search):
         for row in range(qTable.rowCount()):
             qTable.setRowHidden(row, False)
     else:
-        items = qTable.findItems(search, Qt.MatchRegularExpression)
+        items = qTable.findItems(search, Qt.MatchFlag.MatchRegularExpression)
         searched_rows = []
         for i in items:
             searched_rows.append(i.row())
@@ -97,13 +97,13 @@ def tableButtonsChanged():
                     qTable.setCellWidget(rowCount, colCount, btn_del)
                 else:
                     nItem = QTableWidgetItem()
-                    nItem.setData(Qt.DisplayRole, rows[rowCount][colCount + rowid_changed])
+                    nItem.setData(Qt.ItemDataRole.DisplayRole, rows[rowCount][colCount + rowid_changed])
                     qTable.setItem(rowCount, colCount, nItem)
                     if colCount == 0:
-                        nItem.setFlags(nItem.flags() & Qt.ItemIsEditable)
+                        nItem.setFlags(nItem.flags() & Qt.ItemFlag.ItemIsEditable)
             rowCount += 1
     renewing_table = False
-    qTable.sortByColumn(0, Qt.AscendingOrder)
+    qTable.sortByColumn(0, Qt.SortOrder.AscendingOrder)
     __update_search()
 
 
@@ -192,16 +192,16 @@ def cellChanged(x, y):
     if len(others) > 1 and others[0][0]:
         msg_box = QMessageBox()
         msg_box.setText(f"There are {len(others) - 1} other items in '{qTable.horizontalHeaderItem(y).text()}'.\nDo you want to change all of them too?")
-        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
-        msg_box.setDefaultButton(QMessageBox.No)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
         res = msg_box.exec()
-        if res == QMessageBox.Yes:
+        if res == QMessageBox.StandardButton.Yes:
             db_execute(f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE {qTable.horizontalHeaderItem(y).text()}='{str(others[0][0])}'")
             db_commit()
             tableButtonsChanged()
             edit_file_folder(qTable.horizontalHeaderItem(y).text(), others, qTable.item(x, y).text())
             return
-        elif res == QMessageBox.Cancel:
+        elif res == QMessageBox.StandardButton.Cancel:
             qTable.cellChanged.disconnect()
             qTable.item(x, y).setText(str(others[0][0]))
             qTable.cellChanged.connect(cellChanged)
@@ -220,12 +220,12 @@ def cellChanged(x, y):
 def btn_push_del():
     row = qTable.currentIndex().row()
     msg_box = QMessageBox()
-    msg_box.setIcon(QMessageBox.Critical)
+    msg_box.setIcon(QMessageBox.Icon.Critical)
     msg_box.setText("Do you really want to delete the row?")
-    msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-    msg_box.setDefaultButton(QMessageBox.Yes)
+    msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+    msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
     res = msg_box.exec()
-    if res == QMessageBox.Yes:
+    if res == QMessageBox.StandardButton.Yes:
         playlist = qTable.item(row, 1).text()
         title = qTable.item(row, 2).text()
         if title == "":
@@ -368,7 +368,7 @@ def main(database_link, urls=[]):
     lbl_sql_ret = QLabel()
     lbl_sql_ret.setVisible(False)
     lbl_sql_ret.setWordWrap(True)
-    lbl_sql_ret.setTextFormat(Qt.MarkdownText)
+    lbl_sql_ret.setTextFormat(Qt.TextFormat.MarkdownText)
     layout.addWidget(lbl_sql_ret)
 
     btn_sql = QPushButton("Execute SQL")
@@ -390,4 +390,4 @@ def main(database_link, urls=[]):
         txt_sql_field.setText("\n".join(urls))
         btn_push_links("", urls)
 
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
