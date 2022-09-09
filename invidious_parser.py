@@ -9,7 +9,7 @@ import config
 def __fix_yt_title(title):
     if not config.fix_yt_title_artist:
         return title
-    q = re.search("(‘.*’|'.*'’|\".*\")", title)
+    q = re.search("(^| )(‘.*’|'.*'|\".*\")", title)
     if q:
         title = title[q.span()[0] + 1:q.span()[1] - 1]
         # title = title[:q.span()[0]] + title[q.span()[0] + 1:q.span()[1] - 1] + title[q.span()[1]:].strip()
