@@ -214,7 +214,7 @@ def __update_file_metadata(playlist, title, artists, year):
             file = eyed3.load(path)
             file.tag.album = playlist
             file.tag.title = title
-            file.tag.artist = artists
+            file.tag.artist = artists.replace(",", ";")
             file.tag.original_release_date = year
             file.tag.save()
         else:

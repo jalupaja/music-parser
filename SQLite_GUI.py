@@ -168,7 +168,7 @@ def edit_file_folder(col, arr, replace):
         path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
         if arr[0][2] != "" and os.path.exists(path):
             file = eyed3.load(path)
-            file.tag.artist = replace
+            file.tag.artist = replace.replace(",", ";")
             file.tag.save()
     elif col == "year":
         path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
