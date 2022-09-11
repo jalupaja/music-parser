@@ -39,7 +39,10 @@ def search(search):
         items = qTable.findItems(search, Qt.MatchFlag.MatchRegularExpression)
         searched_rows = []
         for i in items:
-            searched_rows.append(i.row())
+            try:
+                searched_rows.append(i.row())
+            except:
+                pass
         for row in range(qTable.rowCount()):
             qTable.setRowHidden(row, row not in searched_rows)
 
