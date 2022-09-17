@@ -248,6 +248,7 @@ def btn_push_ren_yt():
     if qTable.currentRow() < 0:
         return
     id = qTable.item(qTable.currentRow(), 0).text()
+    playlist = qTable.item(qTable.currentRow(), 1).text()
     title = qTable.item(qTable.currentRow(), 2).text()
     artist = qTable.item(qTable.currentRow(), 3).text()
     res = music_parser.__get_new_yt_links(title, artist)
@@ -274,6 +275,12 @@ def btn_push_ren_yt():
             return
 
         qTable.cellChanged.disconnect()
+        path = f"{playlist}/{title.replace('/', '|')}.mp3"
+        if title != "" and os.path.exists(path):
+            try:
+                os.remove(path)
+            except:
+                pass
         qTable.item(qTable.currentRow(), 6).setText(res[int(i) - 1]['videoId'])
         db_execute(f"UPDATE playlists SET yt_link='{res[int(i) - 1]['videoId']}' WHERE rowid={id}")
         db_commit()
