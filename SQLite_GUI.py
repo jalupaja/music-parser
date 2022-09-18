@@ -175,7 +175,7 @@ def edit_file_folder(col, arr, replace):
             file.tag.save()
     elif col == "year":
         path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-        if arr[0][2] != "" and os.path.exists(path):
+        if replace.isdigit() and arr[0][2] != "" and os.path.exists(path):
             file = eyed3.load(path)
             file.tag.original_release_date = replace
             file.tag.save()
