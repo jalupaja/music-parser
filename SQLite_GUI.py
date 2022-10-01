@@ -70,7 +70,7 @@ def tableButtonsChanged():
     renewing_table = True
 
     qTable.clear()
-    data = db_execute(f"SELECT rowid,* FROM {selected_table}")
+    data = db_execute(f"SELECT rowid,* FROM '{selected_table}'")
     cols = data.description
     rows = data.fetchall()
 
@@ -188,7 +188,7 @@ def cellChanged(x, y):
 
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
-        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},playlist_name,title,rowid FROM {__get_selected_table()} WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM {__get_selected_table()} WHERE rowid={qTable.item(x, 0).text()})").fetchall()
+        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},playlist_name,title,rowid FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})").fetchall()
     except:
         return
 
@@ -233,7 +233,7 @@ def btn_push_del():
         title = qTable.item(row, 2).text()
         if title == "":
             return
-        db_execute(f"DELETE FROM {__get_selected_table()} WHERE rowid={qTable.item(row, 0).text()}")
+        db_execute(f"DELETE FROM '{__get_selected_table()}' WHERE rowid={qTable.item(row, 0).text()}")
         db_commit()
         qTable.removeRow(row)
         from_path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
