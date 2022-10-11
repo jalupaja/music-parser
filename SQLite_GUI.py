@@ -5,7 +5,7 @@
 
 # TODO change layout and overall looks (will probably never happen...)
 
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog
+from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog, QComboBox
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import pyqtSlot, Qt
 import eyed3
@@ -52,19 +52,37 @@ def __update_search():
 
 
 def __get_selected_table():
-    for btn in tableButtons:
-        if btn.isChecked():
-            return btn.text()
-    return None
+    return box_tables.currentText()
+
+
+def tablesChanged():
+    previous_table = __get_selected_table()
+    try:
+        box_tables.currentIndexChanged.disconnect()
+    except TypeError:
+        pass
+
+    box_tables.clear()
+
+    tables = db_execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+    select_index = 0
+    i = 0
+    for table in tables:
+        box_tables.addItem(table[0])
+        if table[0] == previous_table:
+            select_index = i
+        else:
+            i += 1
+
+        box_tables.setCurrentIndex(select_index)
+        box_tables.currentIndexChanged.connect(tableButtonsChanged)
+
 
 
 def tableButtonsChanged():
     global qTable
 
     selected_table = __get_selected_table()
-    if selected_table == None:
-        tableButtons[0].toggle()
-        return
 
     global renewing_table
     renewing_table = True
@@ -90,6 +108,7 @@ def tableButtonsChanged():
     qTable.setRowCount(len(rows))
     qTable.setHorizontalHeaderLabels(headers)
 
+    qTable.sortByColumn(0, Qt.SortOrder.AscendingOrder)
     rowLen = len(rows)
     if rowLen:
         for rowCount in range(rowLen):
@@ -106,7 +125,6 @@ def tableButtonsChanged():
                         nItem.setFlags(nItem.flags() & Qt.ItemFlag.ItemIsEditable)
             rowCount += 1
     renewing_table = False
-    qTable.sortByColumn(0, Qt.SortOrder.AscendingOrder)
     __update_search()
 
 
@@ -300,6 +318,7 @@ def btn_push_sql():
 
     if len(result) == 0:
         lbl_sql_ret.setVisible(False)
+    tablesChanged()
     tableButtonsChanged()
 
 
@@ -327,12 +346,12 @@ def db_commit():
 def main(database_link, urls=[]):
     global con
     global db
-    global tableButtons
     global txt_search
     global qTable
     global txt_sql_field
     global lbl_sql_ret
     global database_path
+    global box_tables
 
     database_path = database_link
 
@@ -347,13 +366,9 @@ def main(database_link, urls=[]):
         print_error("Couldn't connect to database!")
         exit()
 
-    tables = db_execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-    tableButtons = []
-    for table in tables:
-        btn = QRadioButton(table[0])
-        btn.clicked.connect(tableButtonsChanged)
-        tableButtons.append(btn)
-        layout.addWidget(btn)
+    box_tables = QComboBox()
+    layout.addWidget(box_tables)
+    tablesChanged()
 
     txt_search = QTextEdit("")
     txt_search.setAcceptRichText(False)
@@ -389,9 +404,7 @@ def main(database_link, urls=[]):
     btnLinks.clicked.connect(btn_push_links)
     layout.addWidget(btnLinks)
 
-    if len(tableButtons) > 0:
-        tableButtons[0].toggle()
-        tableButtonsChanged()
+    tableButtonsChanged()
 
     window.show()
 
