@@ -135,14 +135,19 @@ def edit_file_folder(col, arr, replace):
 
     if col == "playlist_name" and len(arr) > 1:
         if os.path.exists(from_path):
-            for f in os.listdir(replace):
-                if f.endswith("mp3"):
-                    file = eyed3.load(f"{replace}/{f}")
-                    file.tag.album = replace
-                    file.tag.save()
+            try:
+                os.mkdir(replace)
+            except:
+                pass
+            for f in os.listdir(from_path):
                 try:
-                    os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+                    os.rename(f"{from_path}/{f}", f"{replace}/{f}")
+                    if f.endswith("mp3"):
+                        file = eyed3.load(f"{replace}/{f}")
+                        file.tag.album = replace
+                        file.tag.save()
                 except:
+                    print_error("Couln't move all files to the new folder folder")
                     pass
             # delete folder if empty
             try:
