@@ -102,31 +102,13 @@ def __get_ytmusic():
     return ytmusic
 
 
-def migrate_db(old_db_path, new_db_path):
-    oCon = sqlite3.connect(old_db_path)
-    oDb = oCon.cursor()
-    nCon = sqlite3.connect(old_db_path)
-    nDb = nCon.cursor()
-
-    nDb.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT NOT NULL, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
-
-    data_arr = oDb.execute("SELECT (playlist_name, title, artists, url, url_type, yt_link) FROM playlists").fetchall()
-    nDb.close()
-
-    for data in data_arr:
-        nDb.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
-    nDb.commit()
-    oDb.close()
-
-
 def parse_urls(output_file, urls, download_files=False):
     pool = ThreadPool(40)
     try:
         con = sqlite3.connect(output_file)
         db = con.cursor()
         db.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT, artists TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
+            (playlist_name TEXT, title TEXT NOT NULL, artists TEXT, genre TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
     except:
         print_error("cannot parse " + output_file)
         return "cannot parse " + output_file
@@ -208,26 +190,29 @@ def __get_url_data(url):
         return None
 
 
-def __update_file_metadata(playlist, title, artists, year):
-        path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
-        if title != "" and os.path.exists(path):
-            file = eyed3.load(path)
-            file.tag.album = playlist
-            file.tag.title = title
-            file.tag.artist = artists.replace(",", ";")
-            file.tag.original_release_date = year
-            file.tag.save()
-        else:
-            print_error(f"{path} does not exist")
+def __update_file_metadata(playlist, title, artists, genre, year):
+    path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
+    if title != "" and os.path.exists(path):
+        file = eyed3.load(path)
+        file.tag.album = playlist
+        file.tag.title = title
+        file.tag.artist = artists.replace(",", ";")
+        file.tag.original_release_date = year
+        file.tag.year = year
+        file.tag.release_date = year
+        file.tag,genre = genre
+        file.tag.save()
+    else:
+        print_error(f"{path} does not exist")
 
 
 def update_metadata(db_path, download_path):
     con = sqlite3.connect(db_path)
     db = con.cursor()
     os.chdir(download_path)
-    arr = db.execute("SELECT playlist_name,title,artists,year FROM playlists").fetchall()
+    arr = db.execute("SELECT playlist_name, title, artists, genre, year FROM playlists").fetchall()
     for data in arr:
-        __update_file_metadata(data[0], data[1], data[2], data[3])
+        __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
     con.commit()
     con.close()
 
