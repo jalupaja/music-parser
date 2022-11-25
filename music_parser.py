@@ -217,10 +217,10 @@ def update_metadata(db_path, download_path):
     con.close()
 
 
-def add_manual_track(db_path, playlist_name, title, artists, url, url_type, yt_link, year):
+def add_manual_track(db_path, playlist_name, title, artists, genre, url, url_type, yt_link, year):
     con = sqlite3.connect(db_path)
     db = con.cursor()
-    __add_to_db([playlist_name, title, artists, url, url_type, yt_link, year])
+    __add_to_db([playlist_name, title, artists, genre, url, url_type, yt_link, year])
     con.commit()
     con.close()
 
@@ -317,7 +317,7 @@ def renew_yt_link(db_path, id, yt_link=""):
 
 
 def __add_to_db(db_cursor, data):
-    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, genre, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
 
 
 def __parse_single_url(arr):
