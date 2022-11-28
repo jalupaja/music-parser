@@ -118,7 +118,7 @@ def parse_urls(output_file, urls, download_files=False):
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append([data[5], data[1], data[0], data[2], data[6]])
+            down_arr.append([data[6], data[1], data[0], data[2], data[3], data[7]])
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
@@ -334,7 +334,7 @@ def __parse_single_url(arr):
             exit()
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[5].replace("'", "’"), data[1].replace("'", "’"), data[0], data[2], data[6]])
+                down_arr.append([data[6].replace("'", "’"), data[1].replace("'", "’"), data[0], data[2], data[3], data[7]])
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
@@ -383,7 +383,8 @@ def downloadVideo(arr):
     file_name = arr[1].replace("/", "|")
     playlist = arr[2]
     artists = arr[3]
-    year = arr[4]
+    genre = arr[4]
+    year = arr[5]
 
     if youtube_id == "":
         return
@@ -402,7 +403,7 @@ def downloadVideo(arr):
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
         else:
             subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3", shell=True)
-        __update_file_metadata(playlist, file_name, artists, year)
+        __update_file_metadata(playlist, file_name, artists, genre, year)
 
 
 if __name__ == '__main__':
