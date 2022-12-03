@@ -350,6 +350,8 @@ def __parse_single_url(arr):
                                 data[6] = year
                 except:
                     data[5] = ""
+                # Add genre (yes I need to clean this shit up maybe using json format? #FIXME)
+                data.insert(3, "")
                 try:
                     __add_to_db(db, data)
                 except:
