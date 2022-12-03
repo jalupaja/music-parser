@@ -18,18 +18,21 @@ INVIDIOUS_MIRRORS = [
     "https://yt.artemislena.eu",
     "https://invidious.tiekoetter.com",
     "https://invidious.flokinet.to",
-    "https://invidious.nerdvpn.de",
     "https://inv.bp.projectsegfau.lt",
+    "https://inv.vern.cc",
     "https://inv.odyssey346.dev",
     "https://invidious.rhyshl.live",
     "https://invidious.baczek.me",
+    "https://invidious.drivet.xyz",
+    "https://yt.funami.tech",
     "https://invidious.slipfox.xyz",
     "https://invidious.esmailelbob.xyz",
-    "https://youtube.076.ne.jp",
     "https://invidious.dhusch.de",
+    "https://invidious.weblibre.org",
     "https://invidious.namazso.eu",
-    "https://invidious.weblibre.org"
+    "https://invidious.privacydev.net",
 ]
+
 # CONSTANTS
 
 threads = 40
