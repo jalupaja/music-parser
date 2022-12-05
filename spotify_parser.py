@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-import requests
 import config
+import music_struct
 
 
 # TODO add function/ new file to get all playlists from user (with and without login)
@@ -23,7 +23,12 @@ def add_playlist(text):
         for artist in artists:
             artist_arr.append(artist.decode_contents())
 
-        ret.append([playlistName, title.decode_contents(), ",".join(str(x) for x in artist_arr), title['href'][title['href'].index("track/") + 6:], "spotify", "", year])
+        ret.append(music_struct.song(title=title.decode_contents(),
+                                     playlist_name=playlistName,
+                                     artists=",".join(str(x) for x in artist_arr),
+                                     url=title['href'][title['href'].index("track/") + 6:],
+                                     url_type="spotify",
+                                     year=year))
     return ret
 
 
@@ -41,4 +46,4 @@ def add_track(text, url):
         except:
             pass
 
-    return [["", title, artists, url, "spotify", "", year]]
+    return [music_struct.song(title=title, artists=artists, url=url, url_type="spotify", year=year)]

@@ -4,6 +4,7 @@ import requests
 import json
 import re
 import config
+import music_struct
 
 
 def __fix_yt_title(title):
@@ -69,7 +70,7 @@ def add_playlist(text):
         # TODO remove feat. ... from title to artists
         # TODO parse title for music videos (remove MV, feat, ..)
         url = track.find("div", "icon-buttons").find("a")['href'].replace("https://www.youtube.com/watch?v=", "").split("&", 1)[0]
-        ret.append([playlistName, title, artist, url, "yt", url, ""])
+        ret.append(music_struct.song(title=title, playlist_name=playlistName, artists=artist, url=url, url_type="yt", yt_link=url))
 
     return ret
 
@@ -80,7 +81,7 @@ def add_vid(text):
     url = title_h1.find("a")['href'].replace("/watch?v=", "").split("&", 1)[0]
     artists = __fix_yt_artist(text.find("div", config.invidious_vid_link).find("span").decode_contents().split("<", 1)[0].strip())
     year = text.find("div", config.invidious_vid_date_div).find("p", id="published-date").find("b").decode_contents().split(" ")[-1]
-    return [["", title, artists, url, "yt", url, year]]
+    return [music_struct.song(title=title, artists=artists, url=url, url_type="yt", yt_link=url, year=year)]
 
 
 def __search_yt(invInstance, search):

@@ -18,6 +18,7 @@ import spotify_parser
 import invidious_parser
 import youtube_music_parser
 import SQLite_GUI
+import music_struct
 
 
 # The following classes are copied from: https://betterprogramming.pub/how-to-make-parallel-async-http-requests-in-python-d0bd74780b8a
@@ -107,8 +108,7 @@ def parse_urls(output_file, urls, download_files=False):
     try:
         con = sqlite3.connect(output_file)
         db = con.cursor()
-        db.execute('''CREATE TABLE IF NOT EXISTS playlists
-            (playlist_name TEXT, title TEXT NOT NULL, artists TEXT, genre TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER)''')
+        db.execute(f"CREATE TABLE IF NOT EXISTS playlists ({music_struct.sql_table}")
     except:
         print_error("cannot parse " + output_file)
         return "cannot parse " + output_file
@@ -118,7 +118,7 @@ def parse_urls(output_file, urls, download_files=False):
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append([data[6], data[1], data[0], data[2], data[3], data[7]])
+            down_arr.append(music_struct.song("x").from_select(data))
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
@@ -212,7 +212,7 @@ def update_metadata(db_path, download_path):
     os.chdir(download_path)
     arr = db.execute("SELECT playlist_name, title, artists, genre, year FROM playlists").fetchall()
     for data in arr:
-        __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
+        __update_file_metadata(data.playlist, data.title, data.artists, data.genre, data.year)
     con.commit()
     con.close()
 
@@ -220,7 +220,7 @@ def update_metadata(db_path, download_path):
 def add_manual_track(db_path, playlist_name, title, artists, genre, url, url_type, yt_link, year):
     con = sqlite3.connect(db_path)
     db = con.cursor()
-    __add_to_db([playlist_name, title, artists, genre, url, url_type, yt_link, year])
+    __add_to_db(music_struct.song(playlist_name=playlist_name, title=title, artists=artists, genre=genre, url=url, url_typ=url_type, yt_link=yt_link, year=year))
     con.commit()
     con.close()
 
@@ -317,7 +317,7 @@ def renew_yt_link(db_path, id, yt_link=""):
 
 
 def __add_to_db(db_cursor, data):
-    db_cursor.execute("INSERT INTO playlists (playlist_name, title, artists, genre, url, url_type, yt_link, year) VALUES (\'" + "\',\'".join(x.replace("'", "’") for x in data) + "\')")
+    db_cursor.execute(f"INSERT INTO playlists ({data.collumn()}) VALUES ({data.values()})")
 
 
 def __parse_single_url(arr):
@@ -334,24 +334,22 @@ def __parse_single_url(arr):
             exit()
             down_arr = []
             for data in data_arr:
-                down_arr.append([data[6].replace("'", "’"), data[1].replace("'", "’"), data[0], data[2], data[3], data[7]])
+                down_arr.append(data)
             pool.map(downloadVideo, down_arr)
 
         fail_counter = 0
         for data in data_arr:
-            if len(db.execute("SELECT title FROM playlists WHERE playlist_name='" + data[0].replace("'", "’") + "' AND title='" + data[1].replace("'", "’") + "'").fetchall()) < 1:
+            if len(db.execute("SELECT title FROM playlists WHERE playlist_name='" + data.playlist_name.replace("'", "’") + "' AND title='" + data.title.replace("'", "’") + "'").fetchall()) < 1:
                 try:
-                    if data[5] == "":
+                    if data.yt_link == "":
                         if config.use_invidious:
-                            data[5] = invidious_parser.search_yt_id(__get_invidious_instance(), data[2].replace("'", "’") + " " + data[1].replace("'", "’") + " music video")
+                            data.yt_link = invidious_parser.search_yt_id(__get_invidious_instance(), data.artists.replace("'", "’") + " " + data.title.replace("'", "’") + " music video")
                         else:
-                            data[5], year = youtube_music_parser.search_yt_id(__get_ytmusic(), data[2].replace("'", "’") + " " + data[1].replace("'", "’"))
+                            data.yt_link, year = youtube_music_parser.search_yt_id(__get_ytmusic(), data.artists.replace("'", "’") + " " + data.title.replace("'", "’"))
                             if year:
-                                data[6] = year
+                                data.year = year
                 except:
-                    data[5] = ""
-                # Add genre (yes I need to clean this shit up maybe using json format? #FIXME)
-                data.insert(3, "")
+                    data.yt_link = ""
                 try:
                     __add_to_db(db, data)
                 except:
@@ -380,13 +378,13 @@ def __get_proxy():
         return __get_proxy()
 
 
-def downloadVideo(arr):
-    youtube_id = arr[0]
-    file_name = arr[1].replace("/", "|")
-    playlist = arr[2]
-    artists = arr[3]
-    genre = arr[4]
-    year = arr[5]
+def downloadVideo(data):
+    youtube_id = data.yt_link
+    file_name = data.title.replace("/", "|")
+    playlist = data.playlist_name
+    artists = data.artists
+    genre = data.genre
+    year = data.year
 
     if youtube_id == "":
         return

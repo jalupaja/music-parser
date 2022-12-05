@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 
-import requests
-import json
-import re
-import config
-import urllib.parse
 from ytmusicapi import YTMusic
 
 
