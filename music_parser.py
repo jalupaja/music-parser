@@ -108,7 +108,7 @@ def parse_urls(output_file, urls, download_files=False):
     try:
         con = sqlite3.connect(output_file)
         db = con.cursor()
-        db.execute(f"CREATE TABLE IF NOT EXISTS playlists ({music_struct.sql_table}")
+        db.execute(f"CREATE TABLE IF NOT EXISTS playlists ({music_struct.sql_table})")
     except:
         print_error("cannot parse " + output_file)
         return "cannot parse " + output_file
@@ -317,7 +317,7 @@ def renew_yt_link(db_path, id, yt_link=""):
 
 
 def __add_to_db(db_cursor, data):
-    db_cursor.execute(f"INSERT INTO playlists ({data.collumn()}) VALUES ({data.values()})")
+    db_cursor.execute("INSERT INTO playlists (" + data.get_sql_collunms() + ") VALUES (\'" + "\', \'".join(data.get_values()) + "\')")
 
 
 def __parse_single_url(arr):
