@@ -311,7 +311,7 @@ def btn_push_ren_yt():
                 os.remove(path)
             except:
                 pass
-        qTable.item(qTable.currentRow(), 6).setText(res[int(i) - 1]['videoId'])
+        qTable.item(qTable.currentRow(), 7).setText(res[int(i) - 1]['videoId'])
         db_execute(f"UPDATE playlists SET yt_link='{res[int(i) - 1]['videoId']}' WHERE rowid={id}")
         db_commit()
         qTable.cellChanged.connect(cellChanged)
