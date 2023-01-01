@@ -216,6 +216,7 @@ def cellChanged(x, y):
     if renewing_table or qTable.horizontalHeaderItem(y) is None:
         return
 
+    qTable.item(x, y).setText(qTable.item(x, y).text().replace("'", "’"))
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
         others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},playlist_name,title,rowid FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})").fetchall()
