@@ -11,26 +11,32 @@ fix_yt_title_artist = True
 
 # https://api.invidious.io/
 INVIDIOUS_MIRRORS = [
+[
     "https://vid.puffyan.us",
     "https://inv.riverside.rocks",
     "https://y.com.sb",
-    "https://invidious.sethforprivacy.com",
-    "https://yt.artemislena.eu",
+    "https://invidious.nerdvpn.de",
     "https://invidious.tiekoetter.com",
+    "https://yt.artemislena.eu",
     "https://invidious.flokinet.to",
     "https://inv.bp.projectsegfau.lt",
-    "https://inv.vern.cc",
     "https://inv.odyssey346.dev",
-    "https://invidious.rhyshl.live",
     "https://invidious.baczek.me",
-    "https://invidious.drivet.xyz",
+    "https://invidious.sethforprivacy.com",
     "https://yt.funami.tech",
+    "https://inv.vern.cc",
+    "https://invidious.epicsite.xyz",
+    "https://iv.ggtyler.dev",
+    "https://yt.oelrichsgarcia.de",
+    "https://invidious.silur.me",
     "https://invidious.slipfox.xyz",
     "https://invidious.esmailelbob.xyz",
-    "https://invidious.dhusch.de",
     "https://invidious.weblibre.org",
-    "https://invidious.namazso.eu",
+    "https://iv.melmac.space",
+    "https://invidious.lidarshield.cloud",
     "https://invidious.privacydev.net",
+    "https://watch.thekitty.zone",
+    "https://invidious.namazso.eu",
 ]
 
 # CONSTANTS
