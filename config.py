@@ -11,7 +11,6 @@ fix_yt_title_artist = True
 
 # https://api.invidious.io/
 INVIDIOUS_MIRRORS = [
-[
     "https://vid.puffyan.us",
     "https://inv.riverside.rocks",
     "https://y.com.sb",
@@ -36,7 +35,7 @@ INVIDIOUS_MIRRORS = [
     "https://invidious.lidarshield.cloud",
     "https://invidious.privacydev.net",
     "https://watch.thekitty.zone",
-    "https://invidious.namazso.eu",
+    "https://invidious.namazso.eu"
 ]
 
 # CONSTANTS
