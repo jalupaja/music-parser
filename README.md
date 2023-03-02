@@ -1,5 +1,5 @@
 # music parser
-> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (either YouTube Music or Invidious). It can also download the songs to mp3 files using yt-dlp
+> music-parser is a spotify, YouTube, Invidious and Piped parser that will take playlist and song links and parse them into a single SQLite database while trying to find a YouTube link to the song (either YouTube Music or Invidious). It can also download the songs to mp3 files using yt-dlp and create m3d playlists
 
 
 ## installation
@@ -41,9 +41,7 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 > What I might add in the future if I find the motivation
 
 - move GUI in separate Thread to be able to search and use gui at the same time
-- create own implementation of ytmusicapi
-- ability to subscripe to artists
+- ability to subscribe to artists
 - ability to login to spotify and parse all subscribed playlists
-- add unicode support
+- fix unicode characters when parsing titles, ...
 - add a cli search options
-- change gui layout to something more useable
