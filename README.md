@@ -31,7 +31,7 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 | -- | -- |
 | `__get_invidious_instance()` | this will try to get an invidious instance that allows access to the invidious API
 | `__replace_with_invidious(url)` | this will replace any YouTube or Piped `url` with a working Invidious one. This will not output any error if another `url` is given
-| `add_manual_track(db_path, playlist_name, title, genre, url, url_type, yt_link)` | this will add a new entry to the database without utilizing the internet
+| `add_manual_track(db_path, playlists, title, genre, url, url_type, yt_link, dir)` | this will add a new entry to the database without utilizing the internet
 | `search_manual(db_path, search, what_to-search="title")` | this will search the given `search` term in the given database
 | `renew_yt_link(db_path, rowid, yt_link="")` | this will either set the `yt_link` of the given `rowid` or output the top five results given by YouTube and let the user decide which one to pick
 | `update_metadata(db_path, download_path)` | this will update all metadata of the downloaded files 

@@ -5,7 +5,7 @@
 
 # TODO change layout and overall looks (will probably never happen...)
 
-from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QRadioButton, QTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog, QComboBox
+from PyQt6.QtWidgets import QMainWindow, QApplication, QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QGridLayout, QRadioButton, QTextEdit, QPlainTextEdit, QLabel, QPushButton, QMessageBox, QInputDialog, QComboBox, QGroupBox
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import pyqtSlot, Qt
 import eyed3
@@ -127,49 +127,49 @@ def tableButtonsChanged():
     __update_search()
 
 
+def __update_playlist(playlist_file, search, update_path=""):
+    search += '\n'
+    # when update_pathf is empty, the searched line will be removed
+    lines = []
+    try:
+        with open(playlist_file, 'r') as f:
+            lines = f.readlines()
+            if update_path:
+                lines.index(search)
+                lines[search] = update_path
+            else:
+                lines.remove(search)
+    except (FileNotFoundError, ValueError):
+        return
+
+    if len(lines) < 2:
+        os.remove(playlist_file)
+    else:
+        with open(playlist_file, 'w') as f:
+            f.writelines(lines)
+
+
 def edit_file_folder(col, arr, replace):
-    from_path = arr[0][0] if arr[0][0] and arr[0][0] != "./" else "unsorted"
+    from_path = arr[0][0] if arr[0][0] and arr[0][0] != "./" else "./unsorted"
     if replace == "":
         replace = "unsorted"
 
-    if col == "playlist_name" and len(arr) > 1:
-        if os.path.exists(from_path):
-            try:
-                os.mkdir(replace)
-            except:
-                pass
-            for f in os.listdir(from_path):
-                try:
-                    os.rename(f"{from_path}/{f}", f"{replace}/{f}")
-                    if f.endswith("mp3"):
-                        file = eyed3.load(f"{replace}/{f}")
-                        file.tag.album = replace
-                        file.tag.save()
-                except:
-                    print_error("Couln't move all files to the new folder folder")
-                    pass
-            # delete folder if empty
-            try:
-                os.removedirs(from_path)
-            except:
-                pass
-    elif col == "playlist_name":
-        if arr[0][2] != "" and os.path.exists(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"):
-            try:
-                os.mkdir(replace)
-            except:
-                pass
-            try:
-                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-            except:
-                pass
-            file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-            file.tag.album = replace
-            file.tag.save()
-            try:
-                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-            except:
-                pass
+    # TODO playlist on title/dir change
+    if col == "playlists":
+        try:
+            os.mkdir("playlists")
+        except:
+            pass
+        new_playlists = replace.split(';') if replace != "unsorted" else []
+        old_playlists = arr[0][0].split(';')
+        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3" if arr[0][1] != "" else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
+        for playlist in new_playlists:
+            if not playlist in old_playlists and playlist != "":
+                with open(f"playlists/{playlist}.m3u", 'a') as f:
+                    f.write(path + "\n")
+        for playlist in old_playlists:
+            if not playlist in new_playlists:
+                __update_playlist(f"playlists/{playlist}.m3u", path)
     elif col == "title":
         for item in arr:
             from_file_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
@@ -209,6 +209,53 @@ def edit_file_folder(col, arr, replace):
             file.tag.year = replace
             file.tag.release_date = replace
             file.tag.save()
+    elif col == "dir" and len(arr) > 1:
+        if os.path.exists(from_path):
+            try:
+                os.mkdir(replace)
+            except:
+                pass
+            for f in os.listdir(from_path):
+                try:
+                    os.rename(f"{from_path}/{f}", f"{replace}/{f}")
+                    if f.endswith("mp3"):
+                        file = eyed3.load(f"{replace}/{f}")
+                        file.tag.album = replace
+                        file.tag.save()
+                except:
+                    print_error("Couln't move all files to the new folder folder")
+                    pass
+            # delete folder if empty
+            try:
+                os.removedirs(from_path)
+            except:
+                pass
+    elif col == "dir":
+        if arr[0][2] != "" and os.path.exists(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"):
+            try:
+                os.mkdir(replace)
+            except:
+                pass
+            try:
+                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            except:
+                pass
+            file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            file.tag.album = replace
+            file.tag.save()
+            try:
+                os.rename(f"{from_path}/{arr[0][2].replace('/', '|')}.mp3", f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
+            except:
+                pass
+
+
+def __update_file_path(from_folder, to_folder, file_name):
+    if from_folder != to_folder:
+        try:
+            os.mkdir(to_folder)
+            os.rename(f"{from_folder}/{file_name}", f"{to_folder}/{file_name}")
+        except (FileExistsError, FileNotFoundError):
+            pass
 
 
 def cellChanged(x, y):
@@ -219,11 +266,11 @@ def cellChanged(x, y):
     qTable.item(x, y).setText(qTable.item(x, y).text().replace("'", "’"))
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
-        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},playlist_name,title,rowid FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})").fetchall()
+        others = db_execute(f"SELECT {qTable.horizontalHeaderItem(y).text()},dir,title,rowid FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})").fetchall()
     except:
         return
 
-    if len(others) > 1 and others[0][0]:
+    if len(others) > 1 and others[0][0] and qTable.horizontalHeaderItem(y).text() != "playlists":
         msg_box = QMessageBox()
         msg_box.setText(f"There are {len(others) - 1} other items in '{qTable.horizontalHeaderItem(y).text()}'.\nDo you want to change all of them too?")
         msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel)
@@ -243,12 +290,18 @@ def cellChanged(x, y):
 
     __update_search()
     db_execute(f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE rowid={qTable.item(x, 0).text()}")
+    db_execute(f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, y).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}")
+
+    from_path = qTable.item(x, 9).text()
+    to_path = qTable.item(x, y).text().split(';')[0]
+    __update_file_path(from_path if from_path else "unsorted", to_path if to_path else "unsorted", qTable.item(x, 2).text() + ".mp3")
     db_commit()
     item = []
     for o in others:
         if int(qTable.item(x, 0).text()) == int(o[3]):
             edit_file_folder(qTable.horizontalHeaderItem(y).text(), [o], qTable.item(x, y).text())
             break
+    tableButtonsChanged()
 
 
 def btn_push_del():
@@ -260,19 +313,40 @@ def btn_push_del():
     msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
     res = msg_box.exec()
     if res == QMessageBox.StandardButton.Yes:
-        playlist = qTable.item(row, 1).text()
+        dir = qTable.item(row, 8).text()
         title = qTable.item(row, 2).text()
         if title == "":
             return
         db_execute(f"DELETE FROM '{__get_selected_table()}' WHERE rowid={qTable.item(row, 0).text()}")
         db_commit()
         qTable.removeRow(row)
-        from_path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
+        from_path = f"{dir}/{title.replace('/', '|')}.mp3" if dir and dir != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
         if os.path.exists(from_path):
             try:
                 os.remove(from_path)
             except:
                 pass
+
+
+def btn_push_playlist():
+    #FIXME not working at all
+    qTable.cellChanged.disconnect()
+    selected = qTable.selectedIndexes()
+    rows = []
+    for s in selected:
+        rows.append(s.row())
+        # This is a mess. Im sorry
+        if qTable.item(s.row(), 1).text() == "":
+            qTable.item(s.row(), 1).setText(txt_playlist.toPlainText())
+            db_execute(f"UPDATE {__get_selected_table()} SET dir='{qTable.item(s.row(), 1).text().split(';')[0]}' WHERE rowid={qTable.item(s.row(), 0).text()}")
+
+            to_path = txt_playlist.toPlainText()
+            __update_file_path("unsorted", to_path, qTable.item(s.row(), 2).text() + ".mp3")
+        else:
+            qTable.item(s.row(), 1).setText(qTable.item(s.row(), 1).text() + ";" + txt_playlist.toPlainText())
+        edit_file_folder("playlists", [("", qTable.item(s.row(), 9).text(), qTable.item(s.row(), 2).text())], txt_playlist.toPlainText())
+    qTable.cellChanged.connect(cellChanged)
+    tableButtonsChanged()
 
 
 def btn_push_ren_yt():
@@ -361,6 +435,7 @@ def main(database_link, urls=[]):
     global db
     global txt_search
     global qTable
+    global txt_playlist
     global txt_sql_field
     global lbl_sql_ret
     global database_path
@@ -383,8 +458,7 @@ def main(database_link, urls=[]):
     layout.addWidget(box_tables)
     tablesChanged()
 
-    txt_search = QTextEdit("")
-    txt_search.setAcceptRichText(False)
+    txt_search = QPlainTextEdit("")
     txt_search.setPlaceholderText("search via RegEx: ")
     txt_search.setMaximumHeight(25)
     txt_search.textChanged.connect(__update_search)
@@ -393,29 +467,47 @@ def main(database_link, urls=[]):
     qTable = TableView()
     layout.addWidget(qTable)
 
+    box_add_playlist = QGroupBox()
+    layout_add_playlist = QHBoxLayout()
+    btn_add_playlist = QPushButton("Add selected to ")
+    btn_add_playlist.clicked.connect(btn_push_playlist)
+    txt_playlist = QPlainTextEdit("")
+    txt_playlist.setPlaceholderText("playlist")
+    txt_playlist.setMaximumHeight(25)
+    layout_add_playlist.addWidget(btn_add_playlist)
+    layout_add_playlist.addWidget(txt_playlist)
+    box_add_playlist.setLayout(layout_add_playlist)
+    box_add_playlist.setMaximumHeight(55)
+    layout.addWidget(box_add_playlist)
+
     btn_ren_yt = QPushButton("Renew selected yt_url")
     btn_ren_yt.clicked.connect(btn_push_ren_yt)
     layout.addWidget(btn_ren_yt)
 
+    box_sql_links = QGroupBox()
+    layout_sql_links = QGridLayout()
+
     txt_sql_field = QTextEdit("")
-    txt_sql_field.setAcceptRichText(False)
     txt_sql_field.setPlaceholderText("input your SQL or links here: ")
-    txt_sql_field.setMaximumHeight(50)
-    layout.addWidget(txt_sql_field)
+    layout_sql_links.addWidget(txt_sql_field, 0, 0)
 
     lbl_sql_ret = QLabel()
     lbl_sql_ret.setVisible(False)
     lbl_sql_ret.setWordWrap(True)
     lbl_sql_ret.setTextFormat(Qt.TextFormat.MarkdownText)
-    layout.addWidget(lbl_sql_ret)
-
-    btn_sql = QPushButton("Execute SQL")
-    btn_sql.clicked.connect(btn_push_sql)
-    layout.addWidget(btn_sql)
+    layout_sql_links.addWidget(lbl_sql_ret, 0, 1)
 
     btnLinks = QPushButton("Search links")
     btnLinks.clicked.connect(btn_push_links)
-    layout.addWidget(btnLinks)
+    layout_sql_links.addWidget(btnLinks, 1, 0)
+
+    btn_sql = QPushButton("Execute SQL")
+    btn_sql.clicked.connect(btn_push_sql)
+    layout_sql_links.addWidget(btn_sql, 1, 1)
+
+    box_sql_links.setMaximumHeight(150)
+    box_sql_links.setLayout(layout_sql_links)
+    layout.addWidget(box_sql_links)
 
     tableButtonsChanged()
 

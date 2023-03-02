@@ -210,17 +210,17 @@ def update_metadata(db_path, download_path):
     con = sqlite3.connect(db_path)
     db = con.cursor()
     os.chdir(download_path)
-    arr = db.execute("SELECT playlist_name, title, artists, genre, year FROM playlists").fetchall()
+    arr = db.execute("SELECT dir, title, artists, genre, year FROM playlists").fetchall()
     for data in arr:
         __update_file_metadata(data.playlist, data.title, data.artists, data.genre, data.year)
     con.commit()
     con.close()
 
 
-def add_manual_track(db_path, playlist_name, title, artists, genre, url, url_type, yt_link, year):
+def add_manual_track(db_path, playlists, title, artists, genre, url, url_type, yt_link, year, dir):
     con = sqlite3.connect(db_path)
     db = con.cursor()
-    __add_to_db(music_struct.song(playlist_name=playlist_name, title=title, artists=artists, genre=genre, url=url, url_typ=url_type, yt_link=yt_link, year=year))
+    __add_to_db(music_struct.song(playlists=playlists, title=title, artists=artists, genre=genre, url=url, url_typ=url_type, yt_link=yt_link, year=year, dir=dir))
     con.commit()
     con.close()
 
@@ -231,7 +231,7 @@ def __search_db(db_cursor, search, what_to_search):
 
 def search_manual(db_path, search, what_to_search="title"):
     if what_to_search == "playlist":
-        what_to_search = "playlist_name"
+        what_to_search = "dir"
     elif what_to_search == "artist":
         what_to_search = "artists"
 
@@ -339,7 +339,7 @@ def __parse_single_url(arr):
 
         fail_counter = 0
         for data in data_arr:
-            if len(db.execute("SELECT title FROM playlists WHERE playlist_name='" + data.playlist_name.replace("'", "’") + "' AND title='" + data.title.replace("'", "’") + "'").fetchall()) < 1:
+            if len(db.execute("SELECT title FROM playlists WHERE dir='" + data.dir.replace("'", "’") + "' AND title='" + data.title.replace("'", "’") + "'").fetchall()) < 1:
                 try:
                     if data.yt_link == "":
                         if config.use_invidious:
@@ -381,7 +381,7 @@ def __get_proxy():
 def downloadVideo(data):
     youtube_id = data.yt_link
     file_name = data.title.replace("/", "|")
-    playlist = data.playlist_name
+    playlist = data.dir
     artists = data.artists
     genre = data.genre
     year = data.year

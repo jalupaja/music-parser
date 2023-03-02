@@ -24,7 +24,7 @@ def add_playlist(text):
             artist_arr.append(artist.decode_contents())
 
         ret.append(music_struct.song(title=title.decode_contents(),
-                                     playlist_name=playlistName,
+                                     playlists=playlistName,
                                      artists=",".join(str(x) for x in artist_arr),
                                      url=title['href'][title['href'].index("track/") + 6:],
                                      url_type="spotify",

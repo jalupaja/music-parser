@@ -79,11 +79,12 @@ def add_playlist(text):
         ret.append(
             music_struct.song(
                 title=title,
-                playlist_name=playlistName,
+                playlists=playlistName,
                 artists=artist,
                 url=url,
                 url_type="yt",
                 yt_link=url,
+                dir=playlistName,
             )
         )
 
