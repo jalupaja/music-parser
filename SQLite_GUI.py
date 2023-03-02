@@ -3,8 +3,6 @@
 # This file is originally from https://github.com/jalupaja/SQLite-gui
 # and has been edited to add some functionality to this project
 
-# TODO change layout and overall looks (will probably never happen...)
-
 from PyQt6.QtWidgets import (
     QMainWindow,
     QApplication,
@@ -154,6 +152,11 @@ def __pathify_playlist(playlist):
 
 def __update_playlist(playlist_file, old_path="", new_path=""):
     try:
+        os.mkdir("playlists")
+    except FileExistsError:
+        pass
+
+    try:
         with open(playlist_file, "r", encoding="utf-8") as file_read:
             lines = file_read.readlines()
     except FileNotFoundError:
@@ -171,7 +174,7 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
             idx = lines.index(__pathify_playlist(old_path))
             lines[idx] = __pathify_playlist(new_path)
         except ValueError:
-            pass
+            lines.append(__pathify_playlist(new_path))
     elif not old_path and new_path:
         # append
         lines.append(__pathify_playlist(new_path))
@@ -192,10 +195,6 @@ def edit_file_folder(col, arr, replace):
         replace = "unsorted"
 
     if col == "playlists":
-        try:
-            os.mkdir("playlists")
-        except FileExistsError:
-            pass
         new_playlists = replace.split(";") if replace != "unsorted" else []
         old_playlists = arr[0][0].split(";")
         old_path = (
@@ -203,11 +202,19 @@ def edit_file_folder(col, arr, replace):
             if arr[0][1] != ""
             else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
         )
-        new_path = (
-            f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-            if arr[0][1] != ""
-            else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-        )
+        # only change if dir was changed -> if dir == last first playlist
+        if arr[0][1] == arr[0][0].split(";")[0]:
+            new_path = (
+                f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
+                if arr[0][1] != ""
+                else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
+            )
+        else:
+            new_path = (
+                f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
+                if arr[0][1] != ""
+                else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
+            )
         for playlist in old_playlists:
             if playlist not in new_playlists:
                 __update_playlist(f"playlists/{playlist}.m3u", old_path=old_path)
@@ -235,7 +242,7 @@ def edit_file_folder(col, arr, replace):
             replace_path = f"{item[1]}/{replace.replace('/', '|')}.mp3"
 
             # update playlist data
-            for playlist in item[3].split(";"):
+            for playlist in item[4].split(";"):
                 if playlist in old_playlists:
                     __update_playlist(
                         f"playlists/{playlist}.m3u",
@@ -279,7 +286,14 @@ def edit_file_folder(col, arr, replace):
             file.tag.release_date = replace
             file.tag.save()
     elif col == "dir" and len(arr) > 1:
-        # FIXME playlist change missing
+        for a in arr:
+            for playlist in a[4].split(";"):
+                __update_playlist(
+                    f"playlists/{playlist}.m3u",
+                    old_path=f"{from_path}/{a[2]}.mp3",
+                    new_path=f"{replace}/{a[2]}.mp3",
+                )
+
         if os.path.exists(from_path):
             try:
                 os.mkdir(replace)
@@ -301,13 +315,12 @@ def edit_file_folder(col, arr, replace):
             except OSError:
                 pass
     elif col == "dir":
-        for playlist in arr[0][3].split(";"):
-            if playlist in old_playlists:
-                __update_playlist(
-                    f"playlists/{playlist}.m3u",
-                    old_path=f"{from_path}/{arr[0][2].replace('/', '|')}.mp3",
-                    new_path=f"{replace}/{arr[0][2].replace('/', '|')}.mp3",
-                )
+        for playlist in arr[0][4].split(";"):
+            __update_playlist(
+                f"playlists/{playlist}.m3u",
+                old_path=f"{from_path}/{arr[0][2].replace('/', '|')}.mp3",
+                new_path=f"{replace}/{arr[0][2].replace('/', '|')}.mp3",
+            )
         if arr[0][2] != "" and os.path.exists(
             f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"
         ):
@@ -359,7 +372,7 @@ def cellChanged(x, y):
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
     try:
         others = db_execute(
-            f"SELECT {qTable.horizontalHeaderItem(y).text()},dir,title,playlists FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
+            f"SELECT {qTable.horizontalHeaderItem(y).text()},dir,title,rowid,playlists FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
         ).fetchall()
     except:
         return
@@ -400,17 +413,19 @@ def cellChanged(x, y):
     db_execute(
         f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE rowid={qTable.item(x, 0).text()}"
     )
-    db_execute(
-        f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, y).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
-    )
+    # only update dir if the current one was the same as the last first playlist
+    if qTable.item(x, 9).text() == others[0][4].split(";")[0]:
+        db_execute(
+            f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
+        )
+        from_path = qTable.item(x, 9).text()
+        to_path = qTable.item(x, y).text().split(";")[0]
+        __update_file_path(
+            from_path if from_path else "unsorted",
+            to_path if to_path else "unsorted",
+            qTable.item(x, 2).text() + ".mp3",
+        )
 
-    from_path = qTable.item(x, 9).text()
-    to_path = qTable.item(x, y).text().split(";")[0]
-    __update_file_path(
-        from_path if from_path else "unsorted",
-        to_path if to_path else "unsorted",
-        qTable.item(x, 2).text() + ".mp3",
-    )
     db_commit()
     item = []
     for o in others:
