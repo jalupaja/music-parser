@@ -243,12 +243,11 @@ def edit_file_folder(col, arr, replace):
 
             # update playlist data
             for playlist in item[4].split(";"):
-                if playlist in old_playlists:
-                    __update_playlist(
-                        f"playlists/{playlist}.m3u",
-                        old_path=from_file_path,
-                        new_path=replace_path,
-                    )
+                __update_playlist(
+                    f"playlists/{playlist}.m3u",
+                    old_path=from_file_path,
+                    new_path=replace_path,
+                )
 
             if item[2] != "" and replace != "" and os.path.exists(from_file_path):
                 try:
