@@ -35,7 +35,7 @@ INVIDIOUS_MIRRORS = [
     "https://invidious.lidarshield.cloud",
     "https://invidious.privacydev.net",
     "https://watch.thekitty.zone",
-    "https://invidious.namazso.eu"
+    "https://invidious.namazso.eu",
 ]
 
 # CONSTANTS
@@ -56,3 +56,15 @@ invidious_playlist_div = "pure-u-2-3"
 ## set the variable below to a file containing http procies in order to use them to download content
 ## There is a problem that if the proxy doesn't work, the error will only be shown in the console.
 proxy_file = ""
+yt_dl_options = {
+    "format": "bestaudio/best",
+    "postprocessors": [
+        {
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+        },
+        {
+            "key": "SponsorBlock",
+        },
+    ],
+}
