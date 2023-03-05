@@ -56,6 +56,8 @@ invidious_playlist_div = "pure-u-2-3"
 ## set the variable below to a file containing http procies in order to use them to download content
 ## There is a problem that if the proxy doesn't work, the error will only be shown in the console.
 proxy_file = ""
+
+## yt-dlp options for easy access. The output name and possible proxies are inserted dynamically
 yt_dl_options = {
     "format": "bestaudio/best",
     "postprocessors": [
