@@ -224,7 +224,7 @@ def update_metadata(db_path, download_path):
     ).fetchall()
     for data in arr:
         __update_file_metadata(
-            data.playlist, data.title, data.artists, data.genre, data.year
+            data.dir, data.title, data.artists, data.genre, data.year
         )
     con.commit()
     con.close()
@@ -472,19 +472,18 @@ def downloadVideo(data):
         os.mkdir(playlist.replace("'", "’"))
     except:
         pass
-    folder = playlist.replace("'", "’") + "/"
+    folder = playlist.replace("'", "’")
 
     # TODO proxy this
-    if not os.path.exists(f"{folder}{file_name}.mp3"):
+    if not os.path.exists(f"{folder}/{file_name}.mp3"):
         yt_dl_conf = config.yt_dl_options.copy()
-        yt_dl_conf["outtmpl"] = f"{folder}{file_name}"
+        yt_dl_conf["outtmpl"] = f"{folder}/{file_name}"
         if config.proxy_file != "":
             yt_dl_conf["proxy"] = __get_proxy()
 
         with YoutubeDL(yt_dl_conf) as yt_dl:
             yt_dl.download("https://www.youtube.com/watch?v=" + youtube_id)
-            yt_dl.download()
-        __update_file_metadata(playlist, file_name, artists, genre, year)
+        __update_file_metadata(folder, file_name, artists, genre, year)
 
 
 if __name__ == "__main__":
