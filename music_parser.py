@@ -477,7 +477,7 @@ def downloadVideo(data):
     # TODO proxy this
     if not os.path.exists(f"{folder}{file_name}.mp3"):
         yt_dl_conf = config.yt_dl_options.copy()
-        yt_dl_conf["outtmpl"] = f"{folder}{file_name}.mp3"
+        yt_dl_conf["outtmpl"] = f"{folder}{file_name}"
         if config.proxy_file != "":
             yt_dl_conf["proxy"] = __get_proxy()
 
