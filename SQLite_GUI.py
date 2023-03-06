@@ -418,7 +418,7 @@ def cellChanged(x, y):
             f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
         )
         from_path = qTable.item(x, 9).text()
-        to_path = qTable.item(x, y).text().split(";")[0]
+        to_path = qTable.item(x, 1).text().split(";")[0]
         __update_file_path(
             from_path if from_path else "unsorted",
             to_path if to_path else "unsorted",

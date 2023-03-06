@@ -44,15 +44,7 @@ def __fix_yt_artist(artist):
         return artist
     elif "VEVO" in artist:
         artist = artist.replace("VEVO", "")
-        indexes = []
-        for i in range(len(artist)):
-            if artist[i].isupper():
-                indexes.append(i)
-        indexes.pop(0)
-        indexes.reverse()
-        for i in indexes:
-            artist = artist[0:i] + " " + artist[i:]
-        return artist
+        return re.sub(r"([A-Z])", r" \1", artist)
     else:
         return artist.replace(" - Topic", "")
 
