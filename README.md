@@ -9,6 +9,8 @@ GUI version:
 without GUI:
 `pip install -r requirements.txt`
 
+if there is any problem when downloading from youtube, try: `pip install -U yt-dlp`
+
 if you install the project for the first time or parsing YouTube links takes too much time you should try manually renewing the `INVIDIOUS_MIRRORS` in `config.py` by setting them to the output of `renew_invidious_mirrors.py`
 
 You may also need to install ffmpeg in order to convert the downloaded videos to mp3
