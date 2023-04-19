@@ -212,7 +212,7 @@ def update_metadata(db_path, download_path):
     os.chdir(download_path)
     arr = db.execute("SELECT dir, title, artists, genre, year FROM playlists").fetchall()
     for data in arr:
-        __update_file_metadata(data.playlist, data.title, data.artists, data.genre, data.year)
+        __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
     con.commit()
     con.close()
 
