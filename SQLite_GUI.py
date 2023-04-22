@@ -418,7 +418,7 @@ def cellChanged(x, y):
             f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
         )
         from_path = qTable.item(x, 9).text()
-        to_path = qTable.item(x, y).text().split(";")[0]
+        to_path = qTable.item(x, 1).text().split(";")[0]
         __update_file_path(
             from_path if from_path else "unsorted",
             to_path if to_path else "unsorted",
@@ -471,19 +471,20 @@ def btn_push_del():
 def btn_push_playlist():
     qTable.cellChanged.disconnect()
     selected = qTable.selectedIndexes()
+    new_playlist = txt_playlist.toPlainText()
     for s in selected:
         row = s.row()
         # This is a mess. Im sorry
+        if new_playlist in qTable.item(row, 1).text().split(";"):
+            continue
         if qTable.item(row, 1).text() == "":
             db_execute(
-                f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{txt_playlist.toPlainText()}', '{txt_playlist.toPlainText()}') WHERE rowid={qTable.item(row, 0).text()}"
+                f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlist}', '{new_playlist}') WHERE rowid={qTable.item(row, 0).text()}"
             )
-            to_path = txt_playlist.toPlainText()
+            to_path = new_playlist
             __update_file_path("unsorted", to_path, qTable.item(row, 2).text() + ".mp3")
         else:
-            new_playlists = (
-                qTable.item(row, 1).text() + ";" + txt_playlist.toPlainText()
-            )
+            new_playlists = qTable.item(row, 1).text() + ";" + new_playlist
             db_execute(
                 f"UPDATE {__get_selected_table()} SET playlists='{new_playlists}' WHERE rowid={qTable.item(row, 0).text()}"
             )
@@ -491,9 +492,9 @@ def btn_push_playlist():
         path = (
             f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
             if qTable.item(row, 9).text() != ""
-            else f"{txt_playlist.toPlainText()}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
+            else f"{new_playlist}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
         )
-        __update_playlist(f"playlists/{txt_playlist.toPlainText()}.m3u", new_path=path)
+        __update_playlist(f"playlists/{new_playlist}.m3u", new_path=path)
     qTable.cellChanged.connect(cellChanged)
     db_commit()
     tableButtonsChanged()

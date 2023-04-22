@@ -12,6 +12,7 @@ import random
 from queue import Queue
 from threading import Thread
 from ytmusicapi import YTMusic
+from yt_dlp import YoutubeDL
 
 import config
 import spotify_parser
@@ -23,7 +24,6 @@ import music_struct
 
 # The following classes are copied from: https://betterprogramming.pub/how-to-make-parallel-async-http-requests-in-python-d0bd74780b8a
 class Worker(Thread):
-
     def __init__(self, tasks):
         Thread.__init__(self)
         self.tasks = tasks
@@ -76,7 +76,9 @@ def __get_invidious_instance(i=3):
     global __current_invidious_counter
     if __current_invidious_counter == 0:
         __current_invidious_counter = 10
-        __current_invidious_instance = config.INVIDIOUS_MIRRORS[random.randint(0, len(config.INVIDIOUS_MIRRORS) - 1)]
+        __current_invidious_instance = config.INVIDIOUS_MIRRORS[
+            random.randint(0, len(config.INVIDIOUS_MIRRORS) - 1)
+        ]
         try:
             res = requests.get(__current_invidious_instance)
         except:
@@ -85,10 +87,11 @@ def __get_invidious_instance(i=3):
                 return None
             return __get_invidious_instance(i - 1)
 
-
         if res.status_code != 200:
             if i <= 0:
-                print_error("couldn't connect to an Invidious instance.\nCheck your internet connection or update the config.py file")
+                print_error(
+                    "couldn't connect to an Invidious instance.\nCheck your internet connection or update the config.py file"
+                )
                 return None
             return __get_invidious_instance(i - 1)
     else:
@@ -174,7 +177,9 @@ def __get_url_data(url):
             arr = spotify_parser.add_track(soup, url)
         # TODO add artists
         else:
-            print_error(f"cannot_parse {site_name}: {site_about.replace('spotify.', '')}")
+            print_error(
+                f"cannot_parse {site_name}: {site_about.replace('spotify.', '')}"
+            )
             return None
         return arr
     elif site_name == "Piped":
@@ -191,7 +196,11 @@ def __get_url_data(url):
 
 
 def __update_file_metadata(playlist, title, artists, genre, year):
-    path = f"{playlist}/{title.replace('/', '|')}.mp3" if playlist and playlist != "./" else f"unsorted/{title.replace('/', '|')}.mp3"
+    path = (
+        f"{playlist}/{title.replace('/', '|')}.mp3"
+        if playlist and playlist != "./"
+        else f"unsorted/{title.replace('/', '|')}.mp3"
+    )
     if title != "" and os.path.exists(path):
         file = eyed3.load(path)
         file.tag.album = playlist
@@ -210,23 +219,41 @@ def update_metadata(db_path, download_path):
     con = sqlite3.connect(db_path)
     db = con.cursor()
     os.chdir(download_path)
-    arr = db.execute("SELECT dir, title, artists, genre, year FROM playlists").fetchall()
+    arr = db.execute(
+        "SELECT dir, title, artists, genre, year FROM playlists"
+    ).fetchall()
     for data in arr:
         __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
     con.commit()
     con.close()
 
 
-def add_manual_track(db_path, playlists, title, artists, genre, url, url_type, yt_link, year, dir):
+def add_manual_track(
+    db_path, playlists, title, artists, genre, url, url_type, yt_link, year, dir
+):
     con = sqlite3.connect(db_path)
     db = con.cursor()
-    __add_to_db(music_struct.song(playlists=playlists, title=title, artists=artists, genre=genre, url=url, url_typ=url_type, yt_link=yt_link, year=year, dir=dir))
+    __add_to_db(
+        music_struct.song(
+            playlists=playlists,
+            title=title,
+            artists=artists,
+            genre=genre,
+            url=url,
+            url_typ=url_type,
+            yt_link=yt_link,
+            year=year,
+            dir=dir,
+        )
+    )
     con.commit()
     con.close()
 
 
 def __search_db(db_cursor, search, what_to_search):
-    return db_cursor.execute(f"SELECT rowid, * FROM playlists WHERE {what_to_search} LIKE '{search}'").fetchall()
+    return db_cursor.execute(
+        f"SELECT rowid, * FROM playlists WHERE {what_to_search} LIKE '{search}'"
+    ).fetchall()
 
 
 def search_manual(db_path, search, what_to_search="title"):
@@ -259,9 +286,15 @@ def __add_year(arr):
     if artists:
         artists = artists.split(",")
         for artist in artists:
-            res = requests.get(f"{config.lastfm_root}?method=track.getInfo&track={title}&artist={artist}&api_key={config.lastfm_api_key}&format=json")
+            res = requests.get(
+                f"{config.lastfm_root}?method=track.getInfo&track={title}&artist={artist}&api_key={config.lastfm_api_key}&format=json"
+            )
             try:
-                year = (json.loads(res.text))["track"]["wiki"]["published"].split(" ")[2].replace(",","")
+                year = (
+                    (json.loads(res.text))["track"]["wiki"]["published"]
+                    .split(" ")[2]
+                    .replace(",", "")
+                )
                 if year:
                     print_success(f"Found the year {year} for {title}")
                     break
@@ -269,9 +302,15 @@ def __add_year(arr):
                 pass
 
     else:
-        res = requests.get(f"{config.lastfm_root}?method=track.getInfo&track={title}&api_key={config.lastfm_api_key}&format=json")
+        res = requests.get(
+            f"{config.lastfm_root}?method=track.getInfo&track={title}&api_key={config.lastfm_api_key}&format=json"
+        )
         try:
-            year = (json.loads(res.text))["track"]["wiki"]["published"].split(" ")[2].replace(",","")
+            year = (
+                (json.loads(res.text))["track"]["wiki"]["published"]
+                .split(" ")[2]
+                .replace(",", "")
+            )
         except:
             pass
 
@@ -289,7 +328,9 @@ def __add_year(arr):
 
 def __get_new_yt_links(title, artist):
     if config.use_invidious:
-        return invidious_parser.__search_yt(__get_invidious_instance(), f"{title} {artist} music video")
+        return invidious_parser.__search_yt(
+            __get_invidious_instance(), f"{title} {artist} music video"
+        )
     else:
         return youtube_music_parser.__search_yt(__get_ytmusic(), f"{title} {artist}")
 
@@ -304,10 +345,14 @@ def renew_yt_link(db_path, id, yt_link=""):
         try:
             res = __get_new_yt_links(data[2], data[3])
             for i in range(5):
-                print(f"({i + 1}) '{res[i]['title']} by '{res[i]['author']} : {res[i]['videoId']}")
+                print(
+                    f"({i + 1}) '{res[i]['title']} by '{res[i]['author']} : {res[i]['videoId']}"
+                )
             i = input("\ninput the id: ")
             if i != "":
-                db.execute(f"UPDATE playlists SET yt_link='{res[int(i - 1)]['videoId']}' WHERE rowid={id}")
+                db.execute(
+                    f"UPDATE playlists SET yt_link='{res[int(i - 1)]['videoId']}' WHERE rowid={id}"
+                )
 
         except:
             print_error("couldn't parse YouTube links")
@@ -317,7 +362,13 @@ def renew_yt_link(db_path, id, yt_link=""):
 
 
 def __add_to_db(db_cursor, data):
-    db_cursor.execute("INSERT INTO playlists (" + data.get_sql_collunms() + ") VALUES (\'" + "\', \'".join(data.get_values()) + "\')")
+    db_cursor.execute(
+        "INSERT INTO playlists ("
+        + data.get_sql_collunms()
+        + ") VALUES ('"
+        + "', '".join(data.get_values())
+        + "')"
+    )
 
 
 def __parse_single_url(arr):
@@ -339,13 +390,35 @@ def __parse_single_url(arr):
 
         fail_counter = 0
         for data in data_arr:
-            if len(db.execute("SELECT title FROM playlists WHERE dir='" + data.dir.replace("'", "’") + "' AND title='" + data.title.replace("'", "’") + "'").fetchall()) < 1:
+            if (
+                len(
+                    db.execute(
+                        "SELECT title FROM playlists WHERE dir='"
+                        + data.dir.replace("'", "’")
+                        + "' AND title='"
+                        + data.title.replace("'", "’")
+                        + "'"
+                    ).fetchall()
+                )
+                < 1
+            ):
                 try:
                     if data.yt_link == "":
                         if config.use_invidious:
-                            data.yt_link = invidious_parser.search_yt_id(__get_invidious_instance(), data.artists.replace("'", "’") + " " + data.title.replace("'", "’") + " music video")
+                            data.yt_link = invidious_parser.search_yt_id(
+                                __get_invidious_instance(),
+                                data.artists.replace("'", "’")
+                                + " "
+                                + data.title.replace("'", "’")
+                                + " music video",
+                            )
                         else:
-                            data.yt_link, year = youtube_music_parser.search_yt_id(__get_ytmusic(), data.artists.replace("'", "’") + " " + data.title.replace("'", "’"))
+                            data.yt_link, year = youtube_music_parser.search_yt_id(
+                                __get_ytmusic(),
+                                data.artists.replace("'", "’")
+                                + " "
+                                + data.title.replace("'", "’"),
+                            )
                             if year:
                                 data.year = year
                 except:
@@ -361,7 +434,9 @@ def __parse_single_url(arr):
         if fail_counter == len(data_arr):
             print_error(f"couldn't save {url}")
         elif fail_counter > 0:
-            print_error(f"only saved {len(data_arr) - fail_counter} out of {len(data_arr)} from {url}")
+            print_error(
+                f"only saved {len(data_arr) - fail_counter} out of {len(data_arr)} from {url}"
+            )
         else:
             print_success(f"parsed {url}")
 
@@ -395,18 +470,21 @@ def downloadVideo(data):
         os.mkdir(playlist.replace("'", "’"))
     except:
         pass
-    folder = playlist.replace("'", "’") + "/"
+    folder = playlist.replace("'", "’")
 
     # TODO proxy this
-    if not os.path.exists(f"{folder}{file_name}.mp3"):
+    if not os.path.exists(f"{folder}/{file_name}.mp3"):
+        yt_dl_conf = config.yt_dl_options.copy()
+        yt_dl_conf["outtmpl"] = f"{folder}/{file_name}"
         if config.proxy_file != "":
-            subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3 --proxy {__get_proxy()}", shell=True)
-        else:
-            subprocess.call(f"yt-dlp https://www.youtube.com/watch?v={youtube_id} -x --sponsorblock-remove all -o '{folder}{file_name}.%(ext)s' --audio-format mp3", shell=True)
-        __update_file_metadata(playlist, file_name, artists, genre, year)
+            yt_dl_conf["proxy"] = __get_proxy()
+
+        with YoutubeDL(yt_dl_conf) as yt_dl:
+            yt_dl.download("https://www.youtube.com/watch?v=" + youtube_id)
+        __update_file_metadata(folder, file_name, artists, genre, year)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     i = 1
     urls = []
     output_file = "db.db"
@@ -440,7 +518,7 @@ if __name__ == '__main__':
         os.chdir(download_path)
 
     if config.proxy_file != "":
-        proxy_file = open(config.proxy_file, 'r')
+        proxy_file = open(config.proxy_file, "r")
 
     if useGui:
         SQLite_GUI.main(output_file, urls)
