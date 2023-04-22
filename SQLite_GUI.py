@@ -283,6 +283,7 @@ def edit_file_folder(col, arr, replace):
             file.tag.original_release_date = replace
             file.tag.year = replace
             file.tag.release_date = replace
+            file.tag.recording_date = replace
             file.tag.save()
     elif col == "dir" and len(arr) > 1:
         for a in arr:

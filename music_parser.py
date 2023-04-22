@@ -209,6 +209,7 @@ def __update_file_metadata(playlist, title, artists, genre, year):
         file.tag.original_release_date = year
         file.tag.year = year
         file.tag.release_date = year
+        file.tag.recording_date = year
         file.tag.genre = genre
         file.tag.save()
     else:
