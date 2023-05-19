@@ -203,15 +203,18 @@ def __update_file_metadata(playlist, title, artists, genre, year):
     )
     if title != "" and os.path.exists(path):
         file = eyed3.load(path)
-        file.tag.album = playlist
-        file.tag.title = title
-        file.tag.artist = artists.replace(",", ";")
-        file.tag.original_release_date = year
-        file.tag.year = year
-        file.tag.release_date = year
-        file.tag.recording_date = year
-        file.tag.genre = genre
-        file.tag.save()
+        try:
+            file.tag.album = playlist
+            file.tag.title = title
+            file.tag.artist = artists.replace(",", ";")
+            file.tag.original_release_date = year
+            file.tag.year = year
+            file.tag.release_date = year
+            file.tag.recording_date = year
+            file.tag.genre = genre
+            file.tag.save()
+        except:
+            print_error(f"{file} does not seem to be a valid music file")
     else:
         print_error(f"{path} does not exist")
 
