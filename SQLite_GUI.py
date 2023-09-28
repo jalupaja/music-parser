@@ -469,7 +469,7 @@ def btn_push_del():
                 pass
 
 
-def btn_push_playlist():
+def btn_push_add_playlist():
     qTable.cellChanged.disconnect()
     selected = qTable.selectedIndexes()
     new_playlist = txt_playlist.toPlainText()
@@ -496,6 +496,73 @@ def btn_push_playlist():
             else f"{new_playlist}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
         )
         __update_playlist(f"playlists/{new_playlist}.m3u", new_path=path)
+    qTable.cellChanged.connect(cellChanged)
+    db_commit()
+    tableButtonsChanged()
+
+
+def btn_push_rem_playlist():
+    qTable.cellChanged.disconnect()
+    selected = qTable.selectedIndexes()
+    rem_playlists = txt_playlist.toPlainText().split(";")
+    for s in selected:
+        row = s.row()
+        # This is a mess. Im sorry
+        cur_playlists = qTable.item(row, 1).text().split(";")
+        cur_playlist_len = len(cur_playlists)
+        cur_path = qTable.item(row, 9).text()
+        file_name = f"{qTable.item(row, 2).text().replace('/', '|')}.mp3"
+
+        print(cur_playlists)
+        print(cur_path)
+
+        if cur_playlist_len == 0:
+            continue
+
+        for p in rem_playlists:
+            try:
+                cur_playlists.remove(p)
+            except ValueError:
+                pass
+        new_path = cur_playlists[0] if len(cur_playlists) else ""
+
+        if cur_playlist_len == len(cur_playlists):
+            continue
+        elif cur_path == new_path:
+            pass
+        else:
+            if new_path == "":
+                for p in cur_playlists:
+                    __update_playlist(
+                        f"playlists/{p}.m3u",
+                        old_path=f"{cur_path}/{file_name}",
+                        new_path=f"unsorted/{file_name}",
+                    )
+            else:
+                for p in cur_playlists:
+                    __update_playlist(
+                        f"playlists/{p}.m3u",
+                        old_path=f"{cur_path}/{file_name}",
+                        new_path=f"{new_path}/{file_name}",
+                    )
+
+        new_playlists = ";".join(cur_playlists)
+        db_execute(
+            f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlists}','{new_path}') WHERE rowid={qTable.item(row, 0).text()}"
+        )
+
+        if new_path == "":
+            for p in rem_playlists:
+                __update_playlist(
+                    f"playlists/{p}.m3u",
+                    old_path=f"{cur_path}/{file_name}",
+                )
+        else:
+            for p in rem_playlists:
+                __update_playlist(
+                    f"playlists/{p}.m3u",
+                    old_path=f"{cur_path}/{file_name}",
+                )
     qTable.cellChanged.connect(cellChanged)
     db_commit()
     tableButtonsChanged()
@@ -624,12 +691,15 @@ def main(database_link, urls=[]):
     box_add_playlist = QGroupBox()
     layout_add_playlist = QHBoxLayout()
     btn_add_playlist = QPushButton("Add selected to ")
-    btn_add_playlist.clicked.connect(btn_push_playlist)
+    btn_add_playlist.clicked.connect(btn_push_add_playlist)
     txt_playlist = QPlainTextEdit("")
     txt_playlist.setPlaceholderText("playlist")
     txt_playlist.setMaximumHeight(25)
+    btn_rem_playlist = QPushButton("remove from selected")
+    btn_rem_playlist.clicked.connect(btn_push_rem_playlist)
     layout_add_playlist.addWidget(btn_add_playlist)
     layout_add_playlist.addWidget(txt_playlist)
+    layout_add_playlist.addWidget(btn_rem_playlist)
     box_add_playlist.setLayout(layout_add_playlist)
     box_add_playlist.setMaximumHeight(55)
     layout.addWidget(box_add_playlist)
