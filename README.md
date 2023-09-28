@@ -19,25 +19,24 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 ## usage
 `python music_parser.py <flags> url1 url2 url2 ...`
 
-| flags | explanation | default value |
-| -- | -- | -- |
-| `-db <file>` | specify the sqlite database file location | `./db.db`
-| `-d <path>` | download the urls to the specified path. If no urls are given this will download the whole database! | |
-| `-gui` | open the gui version (`requirements-gui.txt` has to be installed) | |
-
+| flags        | explanation                                                                                          | default value |
+|--------------|------------------------------------------------------------------------------------------------------|---------------|
+| `-db <file>` | specify the sqlite database file location                                                            | `./db.db`     |
+| `-d <path>`  | download the urls to the specified path. If no urls are given this will download the whole database! |               |
+| `-gui`       | open the gui version (`requirements-gui.txt` has to be installed)                                    |               |
 
 ## useful functions
 > These are functions inside of music_parser.py Some of them are never called by the program but are useful when needing extendet functionality
 
-| function name | explanation |
-| -- | -- |
-| `__get_invidious_instance()` | this will try to get an invidious instance that allows access to the invidious API
-| `__replace_with_invidious(url)` | this will replace any YouTube or Piped `url` with a working Invidious one. This will not output any error if another `url` is given
-| `add_manual_track(db_path, playlists, title, genre, url, url_type, yt_link, dir)` | this will add a new entry to the database without utilizing the internet
-| `search_manual(db_path, search, what_to-search="title")` | this will search the given `search` term in the given database
-| `renew_yt_link(db_path, rowid, yt_link="")` | this will either set the `yt_link` of the given `rowid` or output the top five results given by YouTube and let the user decide which one to pick
-| `update_metadata(db_path, download_path)` | this will update all metadata of the downloaded files 
-
+| function name                                                                     | explanation                                                                                                                                       |
+|-----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| `__get_invidious_instance()`                                                      | this will try to get an invidious instance that allows access to the invidious API                                                                |
+| `__replace_with_invidious(url)`                                                   | this will replace any YouTube or Piped `url` with a working Invidious one. This will not output any error if another `url` is given               |
+| `add_manual_track(db_path, playlists, title, genre, url, url_type, yt_link, dir)` | this will add a new entry to the database without utilizing the internet                                                                          |
+| `search_manual(db_path, search, what_to-search="title")`                          | this will search the given `search` term in the given database                                                                                    |
+| `renew_yt_link(db_path, rowid, yt_link="")`                                       | this will either set the `yt_link` of the given `rowid` or output the top five results given by YouTube and let the user decide which one to pick |
+| `update_metadata(db_path, download_path)`                                         | this will update all metadata of the downloaded files                                                                                             |
+| `update_playlists(db_path, download_path)`                                        | this will delete all m3u playlists files and recreate them using the current database                                                             |
 
 ## TODO
 > What I might add in the future if I find the motivation
