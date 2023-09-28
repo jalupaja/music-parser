@@ -480,7 +480,7 @@ def btn_push_add_playlist():
             continue
         if qTable.item(row, 1).text() == "":
             db_execute(
-                f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlist}', '{new_playlist}') WHERE rowid={qTable.item(row, 0).text()}"
+                f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlist}', '{new_playlist.split(';')[0]}') WHERE rowid={qTable.item(row, 0).text()}"
             )
             to_path = new_playlist
             __update_file_path("unsorted", to_path, qTable.item(row, 2).text() + ".mp3")
@@ -493,9 +493,10 @@ def btn_push_add_playlist():
         path = (
             f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
             if qTable.item(row, 9).text() != ""
-            else f"{new_playlist}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
+            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
         )
-        __update_playlist(f"playlists/{new_playlist}.m3u", new_path=path)
+        for p in new_playlist.split(";"):
+            __update_playlist(f"playlists/{p}.m3u", new_path=path)
     qTable.cellChanged.connect(cellChanged)
     db_commit()
     tableButtonsChanged()
