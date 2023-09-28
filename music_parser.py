@@ -376,7 +376,7 @@ def __add_to_db(db_cursor, data):
 
 
 def __parse_single_url(arr):
-    url = arr[0]
+    url = arr[0].strip()
     con = sqlite3.connect(arr[1])
     db = con.cursor()
     pool = arr[2]
