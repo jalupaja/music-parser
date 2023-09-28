@@ -228,7 +228,39 @@ def update_metadata(db_path, download_path):
     ).fetchall()
     for data in arr:
         __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
-    con.commit()
+    con.close()
+
+
+def update_playlists(db_path, download_path):
+    """
+    WARNING: this will delete all current .m3u files in the playlists folder and re-create them using the current database
+    """
+    con = sqlite3.connect(db_path)
+    db = con.cursor()
+    os.chdir(download_path)
+    arr = db.execute("SELECT dir, playlists, title FROM playlists").fetchall()
+
+    # delete all current files
+
+    try:
+        for file in os.listdir("playlists"):
+            if file.endswith(".m3u"):
+                try:
+                    os.remove(f"playlists/{file}")
+                except IsADirectoryError:
+                    pass
+    except FileNotFoundError:
+        pass
+
+    # create all new files
+    for data in arr:
+        path = (
+            f"{data[0]}/{data[2].replace('/', '|')}.mp3"
+            if data[0] != ""
+            else f"unsorted/{data[2].replace('/', '|')}.mp3"
+        )
+        for playlist in data[1].split(";"):
+            SQLite_GUI.__update_playlist(f"playlists/{playlist}.m3u", new_path=path)
     con.close()
 
 
