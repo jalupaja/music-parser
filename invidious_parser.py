@@ -58,8 +58,10 @@ def add_playlist(text):
     ret = []
 
     for track in tracks:
-        title = __fix_yt_title(track.find("p", "").decode_contents())
-        artist = __fix_yt_artist(track.find("p", "channel-name").decode_contents())
+        title = __fix_yt_title(track.find("p", "").decode_contents()).strip()
+        artist = __fix_yt_artist(
+            track.find("p", "channel-name").decode_contents()
+        ).strip()
         # TODO remove feat. ... from title to artists
         # TODO parse title for music videos (remove MV, feat, ..)
         url = (
@@ -67,7 +69,7 @@ def add_playlist(text):
             .find("a")["href"]
             .replace("https://www.youtube.com/watch?v=", "")
             .split("&", 1)[0]
-        )
+        ).strip()
         ret.append(
             music_struct.song(
                 title=title,
