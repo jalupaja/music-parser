@@ -34,10 +34,8 @@ import music_struct
 from music_struct import song
 import config
 
-
 def print_error(text):
     print("\033[0;31mERROR: " + text + "\033[1;0m")
-
 
 class TableView(QTableWidget):
     def __init__(self, *args):
@@ -47,7 +45,6 @@ class TableView(QTableWidget):
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
         self.cellChanged.connect(cellChanged)
-
 
 def search(search):
     if search == "":
@@ -64,14 +61,11 @@ def search(search):
         for row in range(qTable.rowCount()):
             qTable.setRowHidden(row, row not in searched_rows)
 
-
 def __update_search():
     search(txt_search.toPlainText())
 
-
 def __get_selected_table():
     return box_tables.currentText()
-
 
 def tablesChanged():
     previous_table = __get_selected_table()
@@ -94,7 +88,6 @@ def tablesChanged():
 
         box_tables.setCurrentIndex(select_index)
         box_tables.currentIndexChanged.connect(tableButtonsChanged)
-
 
 def tableButtonsChanged():
     global qTable
@@ -147,10 +140,8 @@ def tableButtonsChanged():
     renewing_table = False
     __update_search()
 
-
 def __pathify_playlist(playlist):
     return f"../{playlist}\n"
-
 
 def __update_playlist(playlist_file, old_path="", new_path=""):
     try:
@@ -190,10 +181,10 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
         with open(playlist_file, "w", encoding="utf-8") as file_write:
             file_write.writelines(lines)
 
-
 def edit_file_folder(col, songs, replace):
     old_playlists = songs[0].playlists.split(";")
     path = songs[0].path()
+
     if col == "playlists":
         new_playlists = replace.split(";") if replace != "unsorted" else []
         old_path = songs[0].path()
@@ -314,7 +305,6 @@ def edit_file_folder(col, songs, replace):
                 new_path=songs[0].path(filetype=replace),
             )
 
-
 def __update_file_path(from_folder, to_folder, file_name, filetype):
     if from_folder != to_folder:
         try:
@@ -332,7 +322,6 @@ def __update_file_path(from_folder, to_folder, file_name, filetype):
             os.removedirs(from_folder)
         except OSError:
             pass
-
 
 def cellChanged(x, y):
     # fix for weird error when using tableButtonsChanged()
@@ -413,7 +402,6 @@ def cellChanged(x, y):
             break
     tableButtonsChanged()
 
-
 def btn_push_del():
     row = qTable.currentIndex().row()
     msg_box = QMessageBox()
@@ -446,7 +434,6 @@ def btn_push_del():
                 os.remove(from_path)
             except FileNotFoundError:
                 pass
-
 
 def btn_push_add_playlist():
     qTable.cellChanged.disconnect()
@@ -484,7 +471,6 @@ def btn_push_add_playlist():
     qTable.cellChanged.connect(cellChanged)
     db_commit()
     tableButtonsChanged()
-
 
 def btn_push_rem_playlist():
     qTable.cellChanged.disconnect()
@@ -549,7 +535,6 @@ def btn_push_rem_playlist():
     db_commit()
     tableButtonsChanged()
 
-
 def btn_push_ren_yt():
     if qTable.currentRow() < 0:
         return
@@ -595,7 +580,6 @@ def btn_push_ren_yt():
         db_commit()
         qTable.cellChanged.connect(cellChanged)
 
-
 def btn_push_sql():
     lbl_sql_ret.setVisible(True)
     try:
@@ -612,7 +596,6 @@ def btn_push_sql():
     tablesChanged()
     tableButtonsChanged()
 
-
 def btn_push_links(abc, links=[]):
     if len(links) == 0:
         links = str(txt_sql_field.toPlainText()).split("\n")
@@ -623,16 +606,13 @@ def btn_push_links(abc, links=[]):
     lbl_sql_ret.setText(str(music_parser.parse_urls(database_path, links)))
     tableButtonsChanged()
 
-
 def db_execute(text):
     # CHANGE_HERE: This is using SQLite commands but can be changed easily
     return db.execute(text)
 
-
 def db_commit():
     # CHANGE_HERE: This is using SQLite commands but can be changed easily
     con.commit()
-
 
 def main(database_link, urls=[]):
     global con
