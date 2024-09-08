@@ -11,38 +11,21 @@ fix_yt_title_artist = True
 
 # https://api.invidious.io/
 INVIDIOUS_MIRRORS = [
-    "https://invidious.fdn.fr",
-    "https://vid.puffyan.us",
-    "https://invidious.projectsegfau.lt",
-    "https://invidious.nerdvpn.de",
-    "https://invidious.lunar.icu",
-    "https://invidious.io.lol",
     "https://inv.tux.pizza",
-    "https://invidious.privacydev.net",
-    "https://onion.tube",
-    "https://yt.artemislena.eu",
-    "https://vid.priv.au",
-    "https://inv.zzls.xyz",
-    "https://invidious.protokolla.fi",
-    "https://yt.oelrichsgarcia.de",
     "https://iv.ggtyler.dev",
-    "https://invidious.asir.dev",
+    "https://invidious.privacydev.net",
+    "https://inv.nadeko.net",
+    "https://invidious.nerdvpn.de",
+    "https://invidious.jing.rocks",
     "https://iv.nboeck.de",
-    "https://invidious.private.coffee",
-    "https://iv.datura.network",
-    "https://inv.in.projectsegfau.lt",
-    "https://inv.us.projectsegfau.lt",
-    "https://anontube.lvkaszus.pl",
     "https://invidious.perennialte.ch",
+    "https://invidious.reallyaweso.me",
+    "https://invidious.adminforge.de",
+    "https://invidious.yourdevice.ch",
+    "https://iv.nowhere.moe",
+    "https://invidious.privacyredirect.com",
     "https://invidious.einfachzocken.eu",
-    "https://invidious.slipfox.xyz",
-    "https://invidious.no-logs.com",
-    "https://yt.drgnz.club",
-    "https://yt.cdaut.de",
-    "https://inv.citw.lgbt",
-    "https://iv.melmac.space",
 ]
-
 # CONSTANTS
 
 threads = 40
