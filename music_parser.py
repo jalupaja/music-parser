@@ -244,7 +244,7 @@ def update_playlists(db_path, download_path):
 
     # create all new files
     for data in arr:
-        song = music_struct(data)
+        song = music_struct.song(select_data=data)
         song.path()
         for playlist in song.playlists.split(";"):
             SQLite_GUI.__update_playlist(
