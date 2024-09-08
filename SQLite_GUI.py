@@ -24,7 +24,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtGui import QIcon
 from PyQt6.QtCore import pyqtSlot, Qt
-import eyed3
+import taglib
 import os
 import sys
 import sqlite3
@@ -238,9 +238,8 @@ def edit_file_folder(col, songs, replace):
                     os.rename(from_file_path, replace_path)
                 except:
                     pass
-                file = eyed3.load(replace_path)
-                file.tag.title = replace
-                file.tag.save()
+                with taglib.File(replace_path, save_on_exit=True) as file:
+                    file.tags["TITLE"] = replace.split(";")
     elif col == "yt_link":
         if songs[0].title != "" and os.path.exists(path):
             try:
@@ -249,22 +248,16 @@ def edit_file_folder(col, songs, replace):
                 pass
     elif col == "artists":
         if songs[0].title != "" and os.path.exists(path):
-            file = eyed3.load(path)
-            file.tag.artist = replace.replace(",", ";")
-            file.tag.save()
+            with taglib.File(path, save_on_exit=True) as file:
+                file.tags["ARTIST"] = replace.split(";")
     elif col == "genre":
         if songs[0].title != "" and os.path.exists(path):
-            file = eyed3.load(path)
-            file.tag.genre = replace.replace(",", ";")
-            file.tag.save()
+            with taglib.File(path, save_on_exit=True) as file:
+                file.tags["GENRE"] = replace.split(";")
     elif col == "year":
         if replace.isdigit() and songs[0].title != "" and os.path.exists(path):
-            file = eyed3.load(path)
-            file.tag.original_release_date = replace
-            file.tag.year = replace
-            file.tag.release_date = replace
-            file.tag.recording_date = replace
-            file.tag.save()
+            with taglib.File(path, save_on_exit=True) as file:
+                file.tags["YEAR"] = replace.split(";")
     elif col == "dir" and len(songs) > 1:
         for item in songs:
             for playlist in item.playlists.split(";"):
@@ -282,9 +275,8 @@ def edit_file_folder(col, songs, replace):
             for f in os.listdir(songs[0].dir):
                 try:
                     os.rename(f"{songs[0].dir}/{f}", f"{replace}/{f}")
-                    file = eyed3.load(f"{replace}/{f}")
-                    file.tag.album = replace
-                    file.tag.save()
+                    with taglib.File(path, save_on_exit=True) as file:
+                        file.tags["ALBUM"] = replace.split(";")
                 except:
                     print_error("Couln't move all files to the new folder folder")
                     pass
@@ -301,9 +293,8 @@ def edit_file_folder(col, songs, replace):
                 new_path=songs[0].path(dir=replace),
             )
         if songs[0].title != "" and os.path.exists(songs[0].path()):
-            file = eyed3.load(item.path())
-            file.tag.album = replace
-            file.tag.save()
+            with taglib.File(path, save_on_exit=True) as file:
+                file.tags["ALBUM"] = replace.split(";")
             try:
                 os.mkdir(replace)
             except FileExistsError:
@@ -406,11 +397,7 @@ def cellChanged(x, y):
         )
         from_path = qTable.item(x, 9).text()
         to_path = qTable.item(x, 1).text().split(";")[0]
-        print("-----")
-        print(from_path)
-        print(to_path)
-        print(qTable.item(x, 2).text())
-        print("-----")
+
         __update_file_path(
             from_path if from_path else "unsorted",
             to_path if to_path else "unsorted",

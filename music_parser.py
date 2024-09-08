@@ -7,7 +7,7 @@ import json
 import requests
 from bs4 import BeautifulSoup
 import sqlite3
-import eyed3
+import taglib
 import random
 from queue import Queue
 from threading import Thread
@@ -198,17 +198,13 @@ def __get_url_data(url):
 def __update_file_metadata(song):
     path = song.path()
     if song.title != "" and os.path.exists(path):
-        file = eyed3.load(path)
         try:
-            file.tag.album = song.playlist
-            file.tag.title = song.title
-            file.tag.artist = song.artists.replace(",", ";")
-            file.tag.original_release_date = song.year
-            file.tag.year = song.year
-            file.tag.release_date = song.year
-            file.tag.recording_date = song.year
-            file.tag.genre = song.genre
-            file.tag.save()
+            with taglib.File(path, save_on_exit=True) as file:
+                file.tags["TITLE"] = song.title.split(";")
+                file.tags["ALBUM"] = song.playlists.split(";")
+                file.tags["ARTIST"] = song.artists.split(";")
+                file.tags["YEAR"] = [str(song.year)]
+                file.tags["GENRE"] = song.title.split(";")
         except:
             print_error(f"{file} does not seem to be a valid music file")
     else:
@@ -221,7 +217,7 @@ def update_metadata(db_path, download_path):
     os.chdir(download_path)
     arr = db.execute(f"SELECT {music_struct.sql_columns} FROM playlists").fetchall()
     for data in arr:
-        __update_file_metadata(music_struct.song(data))
+        __update_file_metadata(music_struct.song(select_data=data))
     con.close()
 
 

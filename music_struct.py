@@ -18,7 +18,7 @@ class song:
         filetype="",
     ):
         if title is None and select_data is None:
-            return None
+            raise Exception("either title or select_data must be explicitly specified")
         elif title is not None:
             self.set_title(title)
             self.set_playlists(playlists)
