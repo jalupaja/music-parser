@@ -4,7 +4,6 @@
 class song:
     def __init__(
         self,
-        rowid=None,
         title=None,
         select_data=None,
         playlists="",
@@ -31,17 +30,30 @@ class song:
             self.set_dir(dir)
             self.set_filetype(filetype)
         else:
-            self.set_rowid(select_data[0])
-            self.set_playlists(select_data[1])
-            self.set_title(select_data[2])
-            self.set_artists(select_data[3])
-            self.set_genre(select_data[4])
-            self.set_url(select_data[5])
-            self.set_url_type(select_data[6])
-            self.set_yt_link(select_data[7])
-            self.set_year(select_data[8])
-            self.set_dir(select_data[9])
-            self.set_filetype(select_data[10])
+            # rowid is only needed in specific cases:
+            if len(select_data) >= 11:
+                self.set_rowid(select_data[0])
+                self.set_playlists(select_data[1])
+                self.set_title(select_data[2])
+                self.set_artists(select_data[3])
+                self.set_genre(select_data[4])
+                self.set_url(select_data[5])
+                self.set_url_type(select_data[6])
+                self.set_yt_link(select_data[7])
+                self.set_year(select_data[8])
+                self.set_dir(select_data[9])
+                self.set_filetype(select_data[10])
+            else:
+                self.set_playlists(select_data[0])
+                self.set_title(select_data[1])
+                self.set_artists(select_data[2])
+                self.set_genre(select_data[3])
+                self.set_url(select_data[4])
+                self.set_url_type(select_data[5])
+                self.set_yt_link(select_data[6])
+                self.set_year(select_data[7])
+                self.set_dir(select_data[8])
+                self.set_filetype(select_data[9])
 
     def set_rowid(self, rowid):
         self.rowid = rowid
@@ -123,5 +135,5 @@ class song:
         ]
 
 
-sql_columns = "rowid, playlists, title, artists, genre, url, url_type, yt_link, year, dir, filetype"
+sql_columns = "playlists, title, artists, genre, url, url_type, yt_link, year, dir, filetype"
 sql_table = "playlists TEXT, title TEXT NOT NULL, artists TEXT NOT NULL, genre TEXT NOT NULL, url TEXT NOT NULL, url_type TEXT NOT NULL, yt_link TEXT NOT NULL, year INTEGER NOT NULL, dir TEXT NOT NULL, filetype TEXT NOT NULL"

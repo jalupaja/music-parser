@@ -257,7 +257,7 @@ def edit_file_folder(col, songs, replace):
     elif col == "year":
         if replace.isdigit() and songs[0].title != "" and os.path.exists(path):
             with taglib.File(path, save_on_exit=True) as file:
-                file.tags["YEAR"] = replace.split(";")
+                file.tags["DATE"] = [str(replace)]
     elif col == "dir" and len(songs) > 1:
         for item in songs:
             for playlist in item.playlists.split(";"):
@@ -347,7 +347,7 @@ def cellChanged(x, y):
 
     try:
         queue = db_execute(
-            f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE {changed_column}=(SELECT {changed_column} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
+            f"SELECT rowid, {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE {changed_column}=(SELECT {changed_column} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
         ).fetchall()
     except:
         print_error("problem queuing changes")

@@ -203,7 +203,7 @@ def __update_file_metadata(song):
                 file.tags["TITLE"] = song.title.split(";")
                 file.tags["ALBUM"] = song.playlists.split(";")
                 file.tags["ARTIST"] = song.artists.split(";")
-                file.tags["YEAR"] = [str(song.year)]
+                file.tags["DATE"] = [str(song.year)]
                 file.tags["GENRE"] = song.title.split(";")
         except:
             print_error(f"{file} does not seem to be a valid music file")
@@ -391,12 +391,11 @@ def renew_yt_link(db_path, id, yt_link=""):
 def __add_to_db(db_cursor, data):
     db_cursor.execute(
         "INSERT INTO playlists ("
-        + music_struct.get_sql_columns()
+        + music_struct.sql_columns
         + ") VALUES ('"
         + "', '".join(data.get_values())
         + "')"
     )
-
 
 def __parse_single_url(arr):
     url = arr[0].strip()
