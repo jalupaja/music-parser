@@ -390,8 +390,8 @@ def cellChanged(x, y):
     db_execute(
         f"UPDATE {__get_selected_table()} SET {changed_column}='{replace_text}' WHERE rowid={qTable.item(x, 0).text()}"
     )
-    # only update dir if the current one was the same as the last first playlist
-    if qTable.item(x, 9).text() == others[0].playlists.split(";")[0]:
+    # only update dir if the current one was the same as the last first playlist (or the file is currently unsorted)
+    if qTable.item(x, 9).text() == others[0].playlists.split(";")[0] or qTable.item(x, 9).text() == "unsorted":
         db_execute(
             f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
         )
