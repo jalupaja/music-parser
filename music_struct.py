@@ -124,4 +124,4 @@ class song:
 
 
 sql_columns = "rowid, playlists, title, artists, genre, url, url_type, yt_link, year, dir, filetype"
-sql_table = "playlists TEXT, title TEXT NOT NULL, artists TEXT, genre TEXT, url TEXT, url_type TEXT, yt_link TEXT, year INTEGER, dir TEXT, filetype TEXT"
+sql_table = "playlists TEXT, title TEXT NOT NULL, artists TEXT NOT NULL, genre TEXT NOT NULL, url TEXT NOT NULL, url_type TEXT NOT NULL, yt_link TEXT NOT NULL, year INTEGER NOT NULL, dir TEXT NOT NULL, filetype TEXT NOT NULL"
