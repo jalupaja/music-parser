@@ -121,7 +121,7 @@ def parse_urls(output_file, urls, download_files=False):
         data_arr = db.execute("SELECT * FROM playlists").fetchall()
         down_arr = []
         for data in data_arr:
-            down_arr.append(music_struct.song("x").from_select(data))
+            down_arr.append(music_struct.song(select_data=data))
         pool.map(downloadVideo, down_arr)
     else:
         arr = []
@@ -195,23 +195,19 @@ def __get_url_data(url):
         return None
 
 
-def __update_file_metadata(playlist, title, artists, genre, year):
-    path = (
-        f"{playlist}/{title.replace('/', '|')}.mp3"
-        if playlist and playlist != "./"
-        else f"unsorted/{title.replace('/', '|')}.mp3"
-    )
-    if title != "" and os.path.exists(path):
+def __update_file_metadata(song):
+    path = song.path()
+    if song.title != "" and os.path.exists(path):
         file = eyed3.load(path)
         try:
-            file.tag.album = playlist
-            file.tag.title = title
-            file.tag.artist = artists.replace(",", ";")
-            file.tag.original_release_date = year
-            file.tag.year = year
-            file.tag.release_date = year
-            file.tag.recording_date = year
-            file.tag.genre = genre
+            file.tag.album = song.playlist
+            file.tag.title = song.title
+            file.tag.artist = song.artists.replace(",", ";")
+            file.tag.original_release_date = song.year
+            file.tag.year = song.year
+            file.tag.release_date = song.year
+            file.tag.recording_date = song.year
+            file.tag.genre = song.genre
             file.tag.save()
         except:
             print_error(f"{file} does not seem to be a valid music file")
@@ -223,11 +219,9 @@ def update_metadata(db_path, download_path):
     con = sqlite3.connect(db_path)
     db = con.cursor()
     os.chdir(download_path)
-    arr = db.execute(
-        "SELECT dir, title, artists, genre, year FROM playlists"
-    ).fetchall()
+    arr = db.execute(f"SELECT {music_struct.sql_columns} FROM playlists").fetchall()
     for data in arr:
-        __update_file_metadata(data[0], data[1], data[2], data[3], data[4])
+        __update_file_metadata(music_struct.song(data))
     con.close()
 
 
@@ -238,7 +232,7 @@ def update_playlists(db_path, download_path):
     con = sqlite3.connect(db_path)
     db = con.cursor()
     os.chdir(download_path)
-    arr = db.execute("SELECT dir, playlists, title FROM playlists").fetchall()
+    arr = db.execute(f"SELECT {music_struct.sql_columns} FROM playlists").fetchall()
 
     # delete all current files
 
@@ -254,13 +248,12 @@ def update_playlists(db_path, download_path):
 
     # create all new files
     for data in arr:
-        path = (
-            f"{data[0]}/{data[2].replace('/', '|')}.mp3"
-            if data[0] != ""
-            else f"unsorted/{data[2].replace('/', '|')}.mp3"
-        )
-        for playlist in data[1].split(";"):
-            SQLite_GUI.__update_playlist(f"playlists/{playlist}.m3u", new_path=path)
+        song = music_struct(data)
+        song.path()
+        for playlist in song.playlists.split(";"):
+            SQLite_GUI.__update_playlist(
+                f"playlists/{playlist}.m3u", new_path=song.path()
+            )
     con.close()
 
 
@@ -269,7 +262,9 @@ def add_manual_track(
 ):
     con = sqlite3.connect(db_path)
     db = con.cursor()
+
     __add_to_db(
+        db,
         music_struct.song(
             playlists=playlists,
             title=title,
@@ -280,7 +275,7 @@ def add_manual_track(
             yt_link=yt_link,
             year=year,
             dir=dir,
-        )
+        ),
     )
     con.commit()
     con.close()
@@ -400,7 +395,7 @@ def renew_yt_link(db_path, id, yt_link=""):
 def __add_to_db(db_cursor, data):
     db_cursor.execute(
         "INSERT INTO playlists ("
-        + data.get_sql_collunms()
+        + music_struct.get_sql_columns()
         + ") VALUES ('"
         + "', '".join(data.get_values())
         + "')"
@@ -489,35 +484,28 @@ def __get_proxy():
         return __get_proxy()
 
 
-def downloadVideo(data):
-    youtube_id = data.yt_link
-    file_name = data.title.replace("/", "|")
-    playlist = data.dir
-    artists = data.artists
-    genre = data.genre
-    year = data.year
-
-    if youtube_id == "":
+def downloadVideo(song):
+    if song.youtube_id == "":
         return
 
-    if playlist == "" or playlist == "./":
-        playlist = "unsorted"
     try:
-        os.mkdir(playlist.replace("'", "’"))
+        os.mkdir(song.playlist)
     except:
         pass
-    folder = playlist.replace("'", "’")
 
     # TODO proxy this
-    if not os.path.exists(f"{folder}/{file_name}.mp3"):
+    if not os.path.exists(song.path()):
         yt_dl_conf = config.yt_dl_options.copy()
-        yt_dl_conf["outtmpl"] = f"{folder}/{file_name}"
+        yt_dl_conf["outtmpl"] = f"{song.dir}/{song.title}"
+        # overwrite default mp3 codec
+        yt_dl_conf["postprocessors"][0]["preferredcodec"] = song.filetype
+
         if config.proxy_file != "":
             yt_dl_conf["proxy"] = __get_proxy()
 
         with YoutubeDL(yt_dl_conf) as yt_dl:
-            yt_dl.download("https://www.youtube.com/watch?v=" + youtube_id)
-        __update_file_metadata(folder, file_name, artists, genre, year)
+            yt_dl.download("https://www.youtube.com/watch?v=" + song.youtube_id)
+        __update_file_metadata(song)
 
 
 if __name__ == "__main__":

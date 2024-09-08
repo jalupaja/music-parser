@@ -30,6 +30,8 @@ import sys
 import sqlite3
 
 import music_parser
+import music_struct
+from music_struct import song
 import config
 
 
@@ -189,32 +191,14 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
             file_write.writelines(lines)
 
 
-def edit_file_folder(col, arr, replace):
-    from_path = arr[0][0] if arr[0][0] and arr[0][0] != "./" else "./unsorted"
-    if replace == "":
-        replace = "unsorted"
-
+def edit_file_folder(col, songs, replace):
+    old_playlists = songs[0].playlists.split(";")
+    path = songs[0].path()
     if col == "playlists":
         new_playlists = replace.split(";") if replace != "unsorted" else []
-        old_playlists = arr[0][0].split(";")
-        old_path = (
-            f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-            if arr[0][1] != ""
-            else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-        )
-        # only change if dir was changed -> if dir == last first playlist
-        if arr[0][1] == arr[0][0].split(";")[0]:
-            new_path = (
-                f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-                if arr[0][1] != ""
-                else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-            )
-        else:
-            new_path = (
-                f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-                if arr[0][1] != ""
-                else f"{replace.split(';')[0]}/{arr[0][2].replace('/', '|')}.mp3"
-            )
+        old_path = songs[0].path()
+        new_path = songs[0].path(dir=new_playlists[0])
+
         for playlist in old_playlists:
             if playlist not in new_playlists:
                 __update_playlist(f"playlists/{playlist}.m3u", old_path=old_path)
@@ -237,19 +221,19 @@ def edit_file_folder(col, arr, replace):
                 if playlist not in old_playlists and playlist != "":
                     __update_playlist(f"playlists/{playlist}.m3u", new_path=new_path)
     elif col == "title":
-        for item in arr:
-            from_file_path = f"{item[1]}/{item[0].replace('/', '|')}.mp3"
-            replace_path = f"{item[1]}/{replace.replace('/', '|')}.mp3"
+        for item in songs:
+            from_file_path = item.path()
+            replace_path = item.path(title=replace.replace("/", "|"))
 
             # update playlist data
-            for playlist in item[4].split(";"):
+            for playlist in old_playlists:
                 __update_playlist(
                     f"playlists/{playlist}.m3u",
                     old_path=from_file_path,
                     new_path=replace_path,
                 )
 
-            if item[2] != "" and replace != "" and os.path.exists(from_file_path):
+            if item.title != "" and replace != "" and os.path.exists(from_file_path):
                 try:
                     os.rename(from_file_path, replace_path)
                 except:
@@ -258,103 +242,99 @@ def edit_file_folder(col, arr, replace):
                 file.tag.title = replace
                 file.tag.save()
     elif col == "yt_link":
-        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-        if arr[0][2] != "" and os.path.exists(path):
+        if songs[0].title != "" and os.path.exists(path):
             try:
                 os.remove(path)
             except FileNotFoundError:
                 pass
     elif col == "artists":
-        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-        if arr[0][2] != "" and os.path.exists(path):
+        if songs[0].title != "" and os.path.exists(path):
             file = eyed3.load(path)
             file.tag.artist = replace.replace(",", ";")
             file.tag.save()
     elif col == "genre":
-        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-        if arr[0][2] != "" and os.path.exists(path):
+        if songs[0].title != "" and os.path.exists(path):
             file = eyed3.load(path)
             file.tag.genre = replace.replace(",", ";")
             file.tag.save()
     elif col == "year":
-        path = f"{arr[0][1]}/{arr[0][2].replace('/', '|')}.mp3"
-        if replace.isdigit() and arr[0][2] != "" and os.path.exists(path):
+        if replace.isdigit() and songs[0].title != "" and os.path.exists(path):
             file = eyed3.load(path)
             file.tag.original_release_date = replace
             file.tag.year = replace
             file.tag.release_date = replace
             file.tag.recording_date = replace
             file.tag.save()
-    elif col == "dir" and len(arr) > 1:
-        for a in arr:
-            for playlist in a[4].split(";"):
+    elif col == "dir" and len(songs) > 1:
+        for item in songs:
+            for playlist in item.playlists.split(";"):
                 __update_playlist(
                     f"playlists/{playlist}.m3u",
-                    old_path=f"{from_path}/{a[2]}.mp3",
-                    new_path=f"{replace}/{a[2]}.mp3",
+                    old_path=item.path(),
+                    new_path=item.path(dir=replace),
                 )
 
-        if os.path.exists(from_path):
+        if os.path.exists(songs[0].dir):
             try:
                 os.mkdir(replace)
             except FileExistsError:
                 pass
-            for f in os.listdir(from_path):
+            for f in os.listdir(songs[0].dir):
                 try:
-                    os.rename(f"{from_path}/{f}", f"{replace}/{f}")
-                    if f.endswith("mp3"):
-                        file = eyed3.load(f"{replace}/{f}")
-                        file.tag.album = replace
-                        file.tag.save()
+                    os.rename(f"{songs[0].dir}/{f}", f"{replace}/{f}")
+                    file = eyed3.load(f"{replace}/{f}")
+                    file.tag.album = replace
+                    file.tag.save()
                 except:
                     print_error("Couln't move all files to the new folder folder")
                     pass
             # delete folder if empty
             try:
-                os.removedirs(from_path)
+                os.removedirs(songs[0].dir)
             except OSError:
                 pass
     elif col == "dir":
-        for playlist in arr[0][4].split(";"):
+        for playlist in old_playlists:
             __update_playlist(
                 f"playlists/{playlist}.m3u",
-                old_path=f"{from_path}/{arr[0][2].replace('/', '|')}.mp3",
-                new_path=f"{replace}/{arr[0][2].replace('/', '|')}.mp3",
+                old_path=songs[0].path(),
+                new_path=songs[0].path(dir=replace),
             )
-        if arr[0][2] != "" and os.path.exists(
-            f"{from_path}/{arr[0][2].replace('/', '|')}.mp3"
-        ):
+        if songs[0].title != "" and os.path.exists(songs[0].path()):
+            file = eyed3.load(item.path())
+            file.tag.album = replace
+            file.tag.save()
             try:
                 os.mkdir(replace)
             except FileExistsError:
                 pass
             try:
                 os.rename(
-                    f"{from_path}/{arr[0][2].replace('/', '|')}.mp3",
-                    f"{replace}/{arr[0][2].replace('/', '|')}.mp3",
+                    item.path(),
+                    item.path(dir=replace),
                 )
             except:
                 pass
-            file = eyed3.load(f"{replace}/{arr[0][2].replace('/', '|')}.mp3")
-            file.tag.album = replace
-            file.tag.save()
-            try:
-                os.rename(
-                    f"{from_path}/{arr[0][2].replace('/', '|')}.mp3",
-                    f"{replace}/{arr[0][2].replace('/', '|')}.mp3",
-                )
-            except:
-                pass
+    elif col == "filetype":
+        for playlist in old_playlists:
+            __update_playlist(
+                f"playlists/{playlist}.m3u",
+                old_path=songs[0].path(),
+                new_path=songs[0].path(filetype=replace),
+            )
 
 
-def __update_file_path(from_folder, to_folder, file_name):
+def __update_file_path(from_folder, to_folder, file_name, filetype):
     if from_folder != to_folder:
         try:
             os.mkdir(to_folder)
         except FileExistsError:
             pass
         try:
-            os.rename(f"{from_folder}/{file_name}", f"{to_folder}/{file_name}")
+            os.rename(
+                f"{from_folder}/{file_name}.{filetype}",
+                f"{to_folder}/{file_name}.{filetype}",
+            )
         except FileNotFoundError:
             pass
         try:
@@ -368,23 +348,31 @@ def cellChanged(x, y):
     if renewing_table or qTable.horizontalHeaderItem(y) is None:
         return
 
-    qTable.item(x, y).setText(qTable.item(x, y).text().replace("'", "’"))
+    changed_column = qTable.horizontalHeaderItem(y).text()
+    replace_text = qTable.item(x, y).text().replace("'", "’")
+
+    qTable.item(x, y).setText(replace_text)
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
+
     try:
-        others = db_execute(
-            f"SELECT {qTable.horizontalHeaderItem(y).text()},dir,title,rowid,playlists FROM '{__get_selected_table()}' WHERE {qTable.horizontalHeaderItem(y).text()}=(SELECT {qTable.horizontalHeaderItem(y).text()} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
+        queue = db_execute(
+            f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE {changed_column}=(SELECT {changed_column} FROM '{__get_selected_table()}' WHERE rowid={qTable.item(x, 0).text()})"
         ).fetchall()
     except:
+        print_error("problem queuing changes")
         return
-
+    others = []
+    for q in queue:
+        others.append(song(select_data=q))
     if (
         len(others) > 1
-        and others[0][0]
-        and qTable.horizontalHeaderItem(y).text() != "playlists"
+        and others[0] is not None
+        and others[0].title
+        and changed_column not in ["playlists", "filetype"]
     ):
         msg_box = QMessageBox()
         msg_box.setText(
-            f"There are {len(others) - 1} other items in '{qTable.horizontalHeaderItem(y).text()}'.\nDo you want to change all of them too?"
+            f"There are {len(others) - 1} other items in '{changed_column}'.\nDo you want to change all of them too?"
         )
         msg_box.setStandardButtons(
             QMessageBox.StandardButton.Yes
@@ -395,44 +383,46 @@ def cellChanged(x, y):
         res = msg_box.exec()
         if res == QMessageBox.StandardButton.Yes:
             db_execute(
-                f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE {qTable.horizontalHeaderItem(y).text()}='{str(others[0][0])}'"
+                f"UPDATE {__get_selected_table()} SET {changed_column}='{replace_text}' WHERE {changed_column}='{str(others[0].at(changed_column))}'"
             )
             db_commit()
             tableButtonsChanged()
-            edit_file_folder(
-                qTable.horizontalHeaderItem(y).text(), others, qTable.item(x, y).text()
-            )
+            edit_file_folder(changed_column, others, replace_text)
             return
         elif res == QMessageBox.StandardButton.Cancel:
             qTable.cellChanged.disconnect()
-            qTable.item(x, y).setText(str(others[0][0]))
+            qTable.item(x, y).setText(str(others[0].at(changed_column)))
             qTable.cellChanged.connect(cellChanged)
             return
 
     __update_search()
     db_execute(
-        f"UPDATE {__get_selected_table()} SET {qTable.horizontalHeaderItem(y).text()}='{qTable.item(x, y).text()}' WHERE rowid={qTable.item(x, 0).text()}"
+        f"UPDATE {__get_selected_table()} SET {changed_column}='{replace_text}' WHERE rowid={qTable.item(x, 0).text()}"
     )
     # only update dir if the current one was the same as the last first playlist
-    if qTable.item(x, 9).text() == others[0][4].split(";")[0]:
+    if qTable.item(x, 9).text() == others[0].playlists.split(";")[0]:
         db_execute(
             f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
         )
         from_path = qTable.item(x, 9).text()
         to_path = qTable.item(x, 1).text().split(";")[0]
+        print("-----")
+        print(from_path)
+        print(to_path)
+        print(qTable.item(x, 2).text())
+        print("-----")
         __update_file_path(
             from_path if from_path else "unsorted",
             to_path if to_path else "unsorted",
-            qTable.item(x, 2).text() + ".mp3",
+            file_name=qTable.item(x, 2).text(),
+            filetype=qTable.item(x, 10).text(),
         )
 
     db_commit()
     item = []
     for o in others:
-        if int(qTable.item(x, 0).text()) == int(o[3]):
-            edit_file_folder(
-                qTable.horizontalHeaderItem(y).text(), [o], qTable.item(x, y).text()
-            )
+        if int(qTable.item(x, 0).text()) == int(o.rowid):
+            edit_file_folder(changed_column, [o], replace_text)
             break
     tableButtonsChanged()
 
@@ -448,8 +438,10 @@ def btn_push_del():
     msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
     res = msg_box.exec()
     if res == QMessageBox.StandardButton.Yes:
+        # TODO move to music_struct?
         dir = qTable.item(row, 8).text()
         title = qTable.item(row, 2).text()
+        filetype = qTable.item(row, 10).text()
         if title == "":
             return
         db_execute(
@@ -458,9 +450,9 @@ def btn_push_del():
         db_commit()
         qTable.removeRow(row)
         from_path = (
-            f"{dir}/{title.replace('/', '|')}.mp3"
+            f"{dir}/{title.replace('/', '|')}.{filetype}"
             if dir and dir != "./"
-            else f"unsorted/{title.replace('/', '|')}.mp3"
+            else f"unsorted/{title.replace('/', '|')}.{filetype}"
         )
         if os.path.exists(from_path):
             try:
@@ -483,7 +475,12 @@ def btn_push_add_playlist():
                 f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlist}', '{new_playlist.split(';')[0]}') WHERE rowid={qTable.item(row, 0).text()}"
             )
             to_path = new_playlist
-            __update_file_path("unsorted", to_path, qTable.item(row, 2).text() + ".mp3")
+            __update_file_path(
+                "unsorted",
+                to_path,
+                qTable.item(row, 2).text(),
+                qTable.item(row, 10).text(),
+            )
         else:
             new_playlists = qTable.item(row, 1).text() + ";" + new_playlist
             db_execute(
@@ -491,9 +488,9 @@ def btn_push_add_playlist():
             )
 
         path = (
-            f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
+            f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
             if qTable.item(row, 9).text() != ""
-            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text().replace('/', '|')}.mp3"
+            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
         )
         for p in new_playlist.split(";"):
             __update_playlist(f"playlists/{p}.m3u", new_path=path)
@@ -512,10 +509,7 @@ def btn_push_rem_playlist():
         cur_playlists = qTable.item(row, 1).text().split(";")
         cur_playlist_len = len(cur_playlists)
         cur_path = qTable.item(row, 9).text()
-        file_name = f"{qTable.item(row, 2).text().replace('/', '|')}.mp3"
-
-        print(cur_playlists)
-        print(cur_path)
+        file_name = f"{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
 
         if cur_playlist_len == 0:
             continue
@@ -575,6 +569,7 @@ def btn_push_ren_yt():
     id = qTable.item(qTable.currentRow(), 0).text()
     playlist = qTable.item(qTable.currentRow(), 1).text()
     title = qTable.item(qTable.currentRow(), 2).text()
+    filetype = qTable.item(qTable.currentRow(), 10).text()
     artist = qTable.item(qTable.currentRow(), 3).text()
     res = music_parser.__get_new_yt_links(title, artist)
 
@@ -600,7 +595,7 @@ def btn_push_ren_yt():
             return
 
         qTable.cellChanged.disconnect()
-        path = f"{playlist}/{title.replace('/', '|')}.mp3"
+        path = f"{playlist}/{title.replace('/', '|')}.{filetype}"
         if title != "" and os.path.exists(path):
             try:
                 os.remove(path)

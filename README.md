@@ -3,6 +3,8 @@
 
 
 ## installation
+install python >= 3.10 (this is just because of better syntax ("match" statement...). If anybody cares, I will change it.)
+
 GUI version:
 `pip install -r requirements-gui.txt`
 
