@@ -204,7 +204,7 @@ def __update_file_metadata(song):
                 file.tags["ALBUM"] = song.playlists.split(";")
                 file.tags["ARTIST"] = song.artists.split(";")
                 file.tags["DATE"] = [str(song.year)]
-                file.tags["GENRE"] = song.title.split(";")
+                file.tags["GENRE"] = song.genre.split(";")
         except:
             print_error(f"{file} does not seem to be a valid music file")
     else:
