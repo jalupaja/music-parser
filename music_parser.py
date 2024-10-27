@@ -480,7 +480,7 @@ def __get_proxy():
 
 
 def downloadVideo(song):
-    if song.youtube_id == "":
+    if song.yt_link == "":
         return
 
     try:
@@ -499,7 +499,7 @@ def downloadVideo(song):
             yt_dl_conf["proxy"] = __get_proxy()
 
         with YoutubeDL(yt_dl_conf) as yt_dl:
-            yt_dl.download("https://www.youtube.com/watch?v=" + song.youtube_id)
+            yt_dl.download("https://www.youtube.com/watch?v=" + song.yt_link)
         __update_file_metadata(song)
 
 
