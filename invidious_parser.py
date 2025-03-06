@@ -41,12 +41,14 @@ def __fix_yt_title(title):
 
 def __fix_yt_artist(artist):
     if not config.fix_yt_title_artist:
-        return artist
+        res = artist
     elif "VEVO" in artist:
         artist = artist.replace("VEVO", "")
-        return re.sub(r"([A-Z])", r" \1", artist)
+        res = re.sub(r"([A-Z])", r" \1", artist)
     else:
-        return artist.replace(" - Topic", "")
+        res = artist.replace(" - Topic", "")
+
+    return res.strip()
 
 
 def add_playlist(text):
