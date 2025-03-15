@@ -17,6 +17,7 @@ from yt_dlp import YoutubeDL
 import config
 import spotify_parser
 import invidious_parser
+import youtube_parser
 import youtube_music_parser
 import SQLite_GUI
 import music_struct
@@ -192,6 +193,11 @@ def __get_url_data(url):
             return invidious_parser.add_playlist(soup)
         else:
             return invidious_parser.add_vid(soup)
+    elif site_name =="YouTube":
+        if "playlist" in url:
+            return youtube_parser.add_playlist(soup)
+        else:
+            return youtube_parser.add_vid(soup)
     else:
         print_error("cannot parse " + site_name)
         return None
