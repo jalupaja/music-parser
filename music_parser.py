@@ -136,21 +136,23 @@ def parse_urls(output_file, urls, download_files=False):
     return ""
 
 
-def __replace_with_invidious(url):
-    invInstance = __get_invidious_instance()
-    if invInstance is not None:
+def __replace_url(url):
+    if config.use_invidious:
+        domain = __get_invidious_instance()
+    else:
+        domain = "https://www.youtube.com/"
+    if domain is not None:
         if "://" not in url:
-            return invInstance + "/" + url
+            return domain + "/" + url
         else:
-            return invInstance + "/" + url.replace("://", "").split("/")[1]
+            return domain + "/" + url.replace("://", "").split("/")[1]
     else:
         return None
 
 
 def __get_url_data(url):
     # check if link is to youtube and replace it with an invidious instance
-    if "www.youtube.com" in url or "youtu.be" in url or "://" not in url:
-        url = __replace_with_invidious(url)
+    url = __replace_url(url)
 
     try:
         req = requests.get(url)
@@ -183,7 +185,7 @@ def __get_url_data(url):
             return None
         return arr
     elif site_name == "Piped":
-        return __get_url_data(__replace_with_invidious(url))
+        return __get_url_data(__replace_url(url))
     elif site_name == "Invidious":
         # TODO add channels
         if "playlist" in url:
