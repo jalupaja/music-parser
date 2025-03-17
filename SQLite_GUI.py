@@ -190,6 +190,11 @@ def edit_file_folder(col, songs, replace):
         old_path = songs[0].path()
         new_path = songs[0].path(dir=new_playlists[0])
 
+        for song in songs:
+            if song.title != "" and os.path.exists(new_path):
+                with taglib.File(new_path, save_on_exit=True) as file:
+                    file.tags["ALBUM"] = new_playlists
+
         for playlist in old_playlists:
             if playlist not in new_playlists:
                 __update_playlist(f"playlists/{playlist}.m3u", old_path=old_path)
