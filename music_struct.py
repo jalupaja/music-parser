@@ -59,6 +59,7 @@ class song:
         self.rowid = rowid
     def set_title(self, title):
         self.title = title.replace("'", "’")
+        self.title = title.replace("?", "")
     def set_playlists(self, playlists):
         self.playlists = playlists.replace("'", "’")
     def set_artists(self, artists):
