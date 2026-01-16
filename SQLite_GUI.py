@@ -457,7 +457,7 @@ def btn_push_add_playlist():
                 f"UPDATE {__get_selected_table()} SET playlists='{new_playlists}' WHERE rowid={qTable.item(row, 0).text()}"
             )
 
-        song = __get_song(qTable.item(qTable.item(row, 0).text()))
+        song = __get_song(qTable.item(row, 0).text())
 
         if qTable.item(row, 9).text() != "":
             path = song.path()
