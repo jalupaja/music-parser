@@ -181,6 +181,12 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
         with open(playlist_file, "w", encoding="utf-8") as file_write:
             file_write.writelines(lines)
 
+def __get_song(rowid)
+    queue = db_execute(
+        f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE rowid = {rowid}"
+    )
+    return song(select_data=queue)
+
 def edit_file_folder(col, songs, new_value):
     old_playlists = songs[0].playlists.split(";")
     path = songs[0].path()
@@ -310,21 +316,18 @@ def edit_file_folder(col, songs, new_value):
                 new_path=songs[0].path(filetype=new_value),
             )
 
-def __update_file_path(from_folder, to_folder, file_name, filetype):
-    if from_folder != to_folder:
+def __update_file_path(song, to_folder):
+    if song.dir != to_folder:
         try:
             os.mkdir(to_folder)
         except FileExistsError:
             pass
         try:
-            os.rename(
-                f"{from_folder}/{file_name}.{filetype}",
-                f"{to_folder}/{file_name}.{filetype}",
-            )
+            os.rename(song.path(), song.path(dir=to_folder))
         except FileNotFoundError:
             pass
         try:
-            os.removedirs(from_folder)
+            os.removedirs(song.dir)
         except OSError:
             pass
 
@@ -367,7 +370,7 @@ def cellChanged(x, y):
         res = msg_box.exec()
         if res == QMessageBox.StandardButton.Yes:
             db_execute(
-                f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text}' WHERE {changed_column}='{str(others[0].at(changed_column))}'"
+                f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text.replace('\'', '\'\'')}' WHERE {changed_column}='{str(others[0].at(changed_column))}'"
             )
             db_commit()
             tableButtonsChanged()
@@ -381,22 +384,18 @@ def cellChanged(x, y):
 
     __update_search()
     db_execute(
-        f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text}' WHERE rowid={qTable.item(x, 0).text()}"
+        f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text.replace('\'', '\'\'')}' WHERE rowid={qTable.item(x, 0).text()}"
     )
     # only update dir if the current one was the same as the last first playlist (or the file is currently unsorted)
     if qTable.item(x, 9).text() == others[0].playlists.split(";")[0] or qTable.item(x, 9).text() == "unsorted":
         db_execute(
             f"UPDATE {__get_selected_table()} SET dir='{qTable.item(x, 1).text().split(';')[0]}' WHERE rowid={qTable.item(x, 0).text()}"
         )
-        from_path = qTable.item(x, 9).text()
+
+        cur_song = __get_song(qTable.item(x, 0).text())
         to_path = qTable.item(x, 1).text().split(";")[0]
 
-        __update_file_path(
-            from_path if from_path else "unsorted",
-            to_path if to_path else "unsorted",
-            file_name=qTable.item(x, 2).text(),
-            filetype=qTable.item(x, 10).text(),
-        )
+        __update_file_path(cur_song, to_path)
 
     db_commit()
     item = []
@@ -418,10 +417,7 @@ def btn_push_del():
     res = msg_box.exec()
     if res == QMessageBox.StandardButton.Yes:
 
-        queue = db_execute(
-            f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE rowid = {qTable.item(row, 0).text()}"
-        )
-        rem_path = song(select_data=queue).path()
+        rem_path = __get_song(qTable.item(row, 0).text()).path()
 
         db_execute(
             f"DELETE FROM '{__get_selected_table()}' WHERE rowid={qTable.item(row, 0).text()}"
@@ -448,24 +444,23 @@ def btn_push_add_playlist():
             db_execute(
                 f"UPDATE {__get_selected_table()} SET (playlists, dir)=('{new_playlist}', '{new_playlist.split(';')[0]}') WHERE rowid={qTable.item(row, 0).text()}"
             )
+
+            cur_song = __get_song(qTable.item(row, 0).text())
             to_path = new_playlist
-            __update_file_path(
-                "unsorted",
-                to_path,
-                qTable.item(row, 2).text(),
-                qTable.item(row, 10).text(),
-            )
+            __update_file_path(cur_song, to_path)
         else:
             new_playlists = qTable.item(row, 1).text() + ";" + new_playlist
             db_execute(
                 f"UPDATE {__get_selected_table()} SET playlists='{new_playlists}' WHERE rowid={qTable.item(row, 0).text()}"
             )
 
-        path = (
-            f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
-            if qTable.item(row, 9).text() != ""
-            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
-        )
+        song = __get_song(qTabale.item(qTable.item(row, 0).text()))
+
+        if qTable.item(row, 9).text() != "":
+            path = song.path()
+        else:
+            path = song.path(dir=new_playlist.split(';')[0])
+
         for p in new_playlist.split(";"):
             __update_playlist(f"playlists/{p}.m3u", new_path=path)
     qTable.cellChanged.connect(cellChanged)
@@ -481,8 +476,7 @@ def btn_push_rem_playlist():
         # This is a mess. Im sorry
         cur_playlists = qTable.item(row, 1).text().split(";")
         cur_playlist_len = len(cur_playlists)
-        cur_path = qTable.item(row, 9).text()
-        file_name = f"{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
+        song = __get_song(qTable.item(row, 0).text())
 
         if cur_playlist_len == 0:
             continue
@@ -496,22 +490,22 @@ def btn_push_rem_playlist():
 
         if cur_playlist_len == len(cur_playlists):
             continue
-        elif cur_path == new_path:
+        elif song.dir == new_path:
             pass
         else:
             if new_path == "":
                 for p in cur_playlists:
                     __update_playlist(
                         f"playlists/{p}.m3u",
-                        old_path=f"{cur_path}/{file_name}",
-                        new_path=f"unsorted/{file_name}",
+                        old_path=song.path(),
+                        new_path=song.path(dir="unsorted"),
                     )
             else:
                 for p in cur_playlists:
                     __update_playlist(
                         f"playlists/{p}.m3u",
-                        old_path=f"{cur_path}/{file_name}",
-                        new_path=f"{new_path}/{file_name}",
+                        old_path=song.path(),
+                        new_path=song.path(dir=new_path),
                     )
 
         new_playlists = ";".join(cur_playlists)
@@ -523,13 +517,13 @@ def btn_push_rem_playlist():
             for p in rem_playlists:
                 __update_playlist(
                     f"playlists/{p}.m3u",
-                    old_path=f"{cur_path}/{file_name}",
+                    old_path=song.path(),
                 )
         else:
             for p in rem_playlists:
                 __update_playlist(
                     f"playlists/{p}.m3u",
-                    old_path=f"{cur_path}/{file_name}",
+                    old_path=song.path(),
                 )
     qTable.cellChanged.connect(cellChanged)
     db_commit()
