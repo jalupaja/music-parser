@@ -334,9 +334,8 @@ def cellChanged(x, y):
         return
 
     changed_column = qTable.horizontalHeaderItem(y).text()
-    replace_text = qTable.item(x, y).text().replace("'", "’")
+    changed_text = qTable.item(x, y).text()
 
-    qTable.item(x, y).setText(replace_text)
     # check if there are other cells in the same column that had the same text (only if cell wasn't empty)
 
     try:
@@ -368,11 +367,11 @@ def cellChanged(x, y):
         res = msg_box.exec()
         if res == QMessageBox.StandardButton.Yes:
             db_execute(
-                f"UPDATE {__get_selected_table()} SET {changed_column}='{replace_text}' WHERE {changed_column}='{str(others[0].at(changed_column))}'"
+                f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text}' WHERE {changed_column}='{str(others[0].at(changed_column))}'"
             )
             db_commit()
             tableButtonsChanged()
-            edit_file_folder(changed_column, others, replace_text)
+            edit_file_folder(changed_column, others, changed_text)
             return
         elif res == QMessageBox.StandardButton.Cancel:
             qTable.cellChanged.disconnect()
@@ -382,7 +381,7 @@ def cellChanged(x, y):
 
     __update_search()
     db_execute(
-        f"UPDATE {__get_selected_table()} SET {changed_column}='{replace_text}' WHERE rowid={qTable.item(x, 0).text()}"
+        f"UPDATE {__get_selected_table()} SET {changed_column}='{changed_text}' WHERE rowid={qTable.item(x, 0).text()}"
     )
     # only update dir if the current one was the same as the last first playlist (or the file is currently unsorted)
     if qTable.item(x, 9).text() == others[0].playlists.split(";")[0] or qTable.item(x, 9).text() == "unsorted":
@@ -403,7 +402,7 @@ def cellChanged(x, y):
     item = []
     for o in others:
         if int(qTable.item(x, 0).text()) == int(o.rowid):
-            edit_file_folder(changed_column, [o], replace_text)
+            edit_file_folder(changed_column, [o], changed_text)
             break
     tableButtonsChanged()
 
