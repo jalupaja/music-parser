@@ -506,9 +506,12 @@ def downloadVideo(song):
         if config.proxy_file != "":
             yt_dl_conf["proxy"] = __get_proxy()
 
-        with YoutubeDL(yt_dl_conf) as yt_dl:
-            yt_dl.download("https://www.youtube.com/watch?v=" + song.yt_link)
-        __update_file_metadata(song)
+        try:
+            with YoutubeDL(yt_dl_conf) as yt_dl:
+                yt_dl.download("https://www.youtube.com/watch?v=" + song.yt_link)
+            __update_file_metadata(song)
+        except Exception as e:
+            print("Except in downloadVideo: " + str(e))
 
 
 if __name__ == "__main__":
