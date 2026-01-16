@@ -181,12 +181,12 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
         with open(playlist_file, "w", encoding="utf-8") as file_write:
             file_write.writelines(lines)
 
-def edit_file_folder(col, songs, replace):
+def edit_file_folder(col, songs, new_value):
     old_playlists = songs[0].playlists.split(";")
     path = songs[0].path()
 
     if col == "playlists":
-        new_playlists = replace.split(";") if replace != "unsorted" else []
+        new_playlists = new_value.split(";") if new_value != "unsorted" else []
         old_path = songs[0].path()
         new_path = songs[0].path(dir=new_playlists[0])
 
@@ -229,13 +229,13 @@ def edit_file_folder(col, songs, replace):
                     new_path=replace_path,
                 )
 
-            if item.title != "" and replace != "" and os.path.exists(from_file_path):
+            if item.title != "" and new_value != "" and os.path.exists(from_file_path):
                 try:
                     os.rename(from_file_path, replace_path)
                 except:
                     pass
                 with taglib.File(replace_path, save_on_exit=True) as file:
-                    file.tags["TITLE"] = replace.split(";")
+                    file.tags["TITLE"] = new_value.split(";")
     elif col == "yt_link":
         if songs[0].title != "" and os.path.exists(path):
             try:
@@ -245,34 +245,34 @@ def edit_file_folder(col, songs, replace):
     elif col == "artists":
         if songs[0].title != "" and os.path.exists(path):
             with taglib.File(path, save_on_exit=True) as file:
-                file.tags["ARTIST"] = replace.split(";")
+                file.tags["ARTIST"] = new_value.split(";")
     elif col == "genre":
         if songs[0].title != "" and os.path.exists(path):
             with taglib.File(path, save_on_exit=True) as file:
-                file.tags["GENRE"] = replace.split(";")
+                file.tags["GENRE"] = new_value.split(";")
     elif col == "year":
-        if replace.isdigit() and songs[0].title != "" and os.path.exists(path):
+        if new_value.isdigit() and songs[0].title != "" and os.path.exists(path):
             with taglib.File(path, save_on_exit=True) as file:
-                file.tags["DATE"] = [str(replace)]
+                file.tags["DATE"] = [str(new_value)]
     elif col == "dir" and len(songs) > 1:
         for item in songs:
             for playlist in item.playlists.split(";"):
                 __update_playlist(
                     f"playlists/{playlist}.m3u",
                     old_path=item.path(),
-                    new_path=item.path(dir=replace),
+                    new_path=item.path(dir=new_value),
                 )
 
         if os.path.exists(songs[0].dir):
             try:
-                os.mkdir(replace)
+                os.mkdir(new_value)
             except FileExistsError:
                 pass
             for f in os.listdir(songs[0].dir):
                 try:
-                    os.rename(f"{songs[0].dir}/{f}", f"{replace}/{f}")
+                    os.rename(f"{songs[0].dir}/{f}", f"{new_value}/{f}")
                     with taglib.File(path, save_on_exit=True) as file:
-                        file.tags["ALBUM"] = replace.split(";")
+                        file.tags["ALBUM"] = new_value.split(";")
                 except:
                     print_error("Couln't move all files to the new folder folder")
                     pass
@@ -286,19 +286,19 @@ def edit_file_folder(col, songs, replace):
             __update_playlist(
                 f"playlists/{playlist}.m3u",
                 old_path=songs[0].path(),
-                new_path=songs[0].path(dir=replace),
+                new_path=songs[0].path(dir=new_value),
             )
         if songs[0].title != "" and os.path.exists(songs[0].path()):
             with taglib.File(path, save_on_exit=True) as file:
-                file.tags["ALBUM"] = replace.split(";")
+                file.tags["ALBUM"] = new_value.split(";")
             try:
-                os.mkdir(replace)
+                os.mkdir(new_value)
             except FileExistsError:
                 pass
             try:
                 os.rename(
                     item.path(),
-                    item.path(dir=replace),
+                    item.path(dir=new_value),
                 )
             except:
                 pass
@@ -307,7 +307,7 @@ def edit_file_folder(col, songs, replace):
             __update_playlist(
                 f"playlists/{playlist}.m3u",
                 old_path=songs[0].path(),
-                new_path=songs[0].path(filetype=replace),
+                new_path=songs[0].path(filetype=new_value),
             )
 
 def __update_file_path(from_folder, to_folder, file_name, filetype):
