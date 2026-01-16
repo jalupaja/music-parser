@@ -51,7 +51,6 @@ def add_playlist(text):
     return None
 
 def add_vid(text):
-    print("yt: add_vid")
     title = fix_yt_title(text.title.decode_contents().replace(" - YouTube", ""))
     url = re.sub(".*/watch\\?v=", "", text.find("link", rel="canonical")["href"]).split("&", 1)[0]
     artists = fix_yt_artist(text.find("link", itemprop="name")["content"])
