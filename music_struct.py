@@ -125,7 +125,7 @@ class song:
         # update possible changes
         if dir is None:
             dir = self.dir
-        if dir = "":
+        if dir == "":
             dir = "unsorted"
         if title is None:
             title = self.title
