@@ -147,5 +147,9 @@ class song:
         ]
 
 
+    def __str__(self):
+        return str(self.get_values())
+
+
 sql_columns = "playlists, title, artists, genre, url, url_type, yt_link, year, dir, filetype"
 sql_table = "playlists TEXT, title TEXT NOT NULL, artists TEXT NOT NULL, genre TEXT NOT NULL, url TEXT NOT NULL, url_type TEXT NOT NULL, yt_link TEXT NOT NULL, year INTEGER NOT NULL, dir TEXT NOT NULL, filetype TEXT NOT NULL"
