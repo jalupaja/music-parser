@@ -539,7 +539,7 @@ if __name__ == "__main__":
             urls.append(sys.argv[i])
         i += 1
 
-    if download_path == ".":
+    if download_path in ["", "."]:
         path = output_file.split("/")
         path.pop(-1)
         if len(path) > 0:
