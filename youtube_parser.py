@@ -1,5 +1,6 @@
-import music_struct
 import re
+import config
+import music_struct
 
 def fix_yt_title(title):
     if not config.fix_yt_title_artist:
