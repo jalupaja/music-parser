@@ -38,7 +38,6 @@ def add_playlist(text):
                 url=url,
                 url_type="yt",
                 yt_link=url,
-                dir=playlistName,
             )
         )
 
