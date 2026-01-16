@@ -77,6 +77,7 @@ class song:
     def set_dir(self, dir):
         if dir == "":
             dir = "unsorted"
+        self.dir = dir
     def set_filetype(self, filetype):
         # Fallback to mp3
         if filetype == "":
