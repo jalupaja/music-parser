@@ -11,20 +11,9 @@ fix_yt_title_artist = True
 
 # https://api.invidious.io/
 INVIDIOUS_MIRRORS = [
-    "https://inv.tux.pizza",
-    "https://iv.ggtyler.dev",
-    "https://invidious.privacydev.net",
-    "https://inv.nadeko.net",
-    "https://invidious.nerdvpn.de",
-    "https://invidious.jing.rocks",
-    "https://iv.nboeck.de",
-    "https://invidious.perennialte.ch",
-    "https://invidious.reallyaweso.me",
-    "https://invidious.adminforge.de",
-    "https://invidious.yourdevice.ch",
-    "https://iv.nowhere.moe",
-    "https://invidious.privacyredirect.com",
-    "https://invidious.einfachzocken.eu",
+        "inv.nadeko.net",
+        "invidious.nerdvpn.de",
+        "yewtu.be",
 ]
 # CONSTANTS
 
