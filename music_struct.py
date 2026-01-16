@@ -84,7 +84,7 @@ class song:
             filetype = "mp3"
         self.filetype = filetype
 
-    def __file_save(self, path):
+    def __filesystem_save(self, path):
         invalid_chars = r'[<>:"/\\|?*\'’\"() ]' # for windows and linux
         new_path = re.sub(invalid_chars, '_', path)
 
@@ -126,7 +126,7 @@ class song:
         if dir is None:
             dir = self.dir
         if title is None:
-            title = self.__file_save(self.title)
+            title = self.__filesystem_save(self.title)
         if filetype is None:
             filetype = self.filetype
 
