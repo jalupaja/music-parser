@@ -319,7 +319,10 @@ def edit_file_folder(col, songs, new_value):
 def __update_file_path(song, to_folder):
     if song.dir != to_folder:
         try:
-            os.mkdir(to_folder)
+            if to_folder == "":
+                os.mkdir("unsorted") # TODO move out of here...
+            else:
+                os.mkdir(to_folder)
         except FileExistsError:
             pass
         try:
