@@ -125,12 +125,16 @@ class song:
         # update possible changes
         if dir is None:
             dir = self.dir
+        if dir = "":
+            dir = "unsorted"
         if title is None:
             title = self.title
         if filetype is None:
             filetype = self.filetype
 
-        return f"{dir}/{self.__filesystem_save(title)}.{filetype}"
+        title = self.__filesystem_save(title)
+
+        return f"{dir}/{title}.{filetype}"
 
 
     def get_values(self):
