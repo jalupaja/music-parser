@@ -141,10 +141,10 @@ def __replace_url(url):
     if config.use_invidious:
         domain = __get_invidious_instance()
     else:
-        domain = "https://www.youtube.com/"
+        domain = "https://www.youtube.com"
     if domain is not None:
         if "://" not in url:
-            return domain + "/" + url
+            return domain + "/watch?v=" + url
         else:
             return domain + "/" + url.replace("://", "").split("/")[1]
     else:
