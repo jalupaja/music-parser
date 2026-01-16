@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import re
 
 class song:
     def __init__(
@@ -58,16 +59,15 @@ class song:
     def set_rowid(self, rowid):
         self.rowid = rowid
     def set_title(self, title):
-        self.title = title.replace("'", "’")
-        self.title = title.replace("?", "")
+        self.title = title.replace("'", "''")
     def set_playlists(self, playlists):
-        self.playlists = playlists.replace("'", "’")
+        self.playlists = playlists.replace("'", "''")
     def set_artists(self, artists):
-        self.artists = artists.replace("'", "’")
+        self.artists = artists.replace("'", "''")
     def set_genre(self, genre):
-        self.genre = genre.replace("'", "’")
+        self.genre = genre.replace("'", "''")
     def set_url(self, url):
-        self.url = url.replace("'", "’")
+        self.url = url.replace("'", "''")
     def set_url_type(self, url_type):
         self.url_type = url_type
     def set_yt_link(self, yt_link):
@@ -77,12 +77,23 @@ class song:
     def set_dir(self, dir):
         if dir == "":
             dir = "unsorted"
-        self.dir = dir.replace("'", "’")
     def set_filetype(self, filetype):
-        # Fallback on mp3
+        # Fallback to mp3
         if filetype == "":
             filetype = "mp3"
         self.filetype = filetype
+
+    def __file_save(self, path):
+        invalid_chars = r'[<>:"/\\|?*\'’\"() ]' # for windows and linux
+        new_path = re.sub(invalid_chars, '_', path)
+
+        # Umlaute
+        new_path = new_path.replace('ä', 'ae').replace('Ä', 'Ae')
+        new_path = new_path.replace('ö', 'oe').replace('Ö', 'Oe')
+        new_path = new_path.replace('ü', 'ue').replace('Ü', 'Ue')
+        new_path = new_path.replace('ß', 'ss').replace('ẞ', 'Ss')
+
+        return new_path
 
     def at(self, at):
         match at:
@@ -114,7 +125,7 @@ class song:
         if dir is None:
             dir = self.dir
         if title is None:
-            title = self.title
+            title = self.__file_save(self.title)
         if filetype is None:
             filetype = self.filetype
 
