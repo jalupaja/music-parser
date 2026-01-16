@@ -6,49 +6,7 @@ import re
 import config
 import music_struct
 
-
-def __fix_yt_title(title):
-    if not config.fix_yt_title_artist:
-        return title
-    q = re.search("(^| )(‘.*’|'.*'|\".*\")", title)
-    if q:
-        title = q.group(2)
-    else:
-        title = re.sub("\(.*\)", "", title)
-        title = re.sub("\[.*\]", "", title)
-
-        dash = re.search(" - ", title)
-        if dash:
-            ntitle = title[dash.span()[1] :].strip()
-            if ntitle != "":
-                title = ntitle
-
-        feat = re.search(" (ft|feat|featuring)\.? ", title.lower())
-        if feat:
-            ntitle = title[0 : feat.span()[0]].strip()
-            if ntitle != "":
-                title = ntitle
-
-        mv = re.search(" ?M\/?V ?", title)
-        if mv:
-            title = title[0 : mv.span()[0]] + title[mv.span()[1] :]
-
-        if " | " in title:
-            title = title.split(" | ")[0]
-
-    return title.strip()
-
-
-def __fix_yt_artist(artist):
-    if not config.fix_yt_title_artist:
-        res = artist
-    elif "VEVO" in artist:
-        artist = artist.replace("VEVO", "")
-        res = re.sub(r"([A-Z])", r" \1", artist)
-    else:
-        res = artist.replace(" - Topic", "")
-
-    return res.strip()
+from youtube_parser import fix_yt_title, fix_yt_artist
 
 
 def add_playlist(text):
@@ -60,8 +18,8 @@ def add_playlist(text):
     ret = []
 
     for track in tracks:
-        title = __fix_yt_title(track.find("p", "").decode_contents()).strip()
-        artist = __fix_yt_artist(
+        title = fix_yt_title(track.find("p", "").decode_contents()).strip()
+        artist = fix_yt_artist(
             track.find("p", "channel-name").decode_contents()
         ).strip()
         # TODO remove feat. ... from title to artists
@@ -89,9 +47,9 @@ def add_playlist(text):
 
 def add_vid(text):
     title_h1 = text.find("h1")
-    title = __fix_yt_title(title_h1.decode_contents().split("\n", 2)[1].strip())
+    title = fix_yt_title(title_h1.decode_contents().split("\n", 2)[1].strip())
     url = title_h1.find("a")["href"].replace("/watch?v=", "").split("&", 1)[0]
-    artists = __fix_yt_artist(
+    artists = fix_yt_artist(
         text.find("div", config.invidious_vid_link)
         .find("span")
         .decode_contents()
