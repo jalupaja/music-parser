@@ -181,10 +181,10 @@ def __update_playlist(playlist_file, old_path="", new_path=""):
         with open(playlist_file, "w", encoding="utf-8") as file_write:
             file_write.writelines(lines)
 
-def __get_song(rowid)
+def __get_song(rowid):
     queue = db_execute(
         f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE rowid = {rowid}"
-    )
+    ).fetchone()
     return song(select_data=queue)
 
 def edit_file_folder(col, songs, new_value):
