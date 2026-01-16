@@ -499,7 +499,7 @@ def downloadVideo(song):
     # TODO proxy this
     if not os.path.exists(song.path()):
         yt_dl_conf = config.yt_dl_options.copy()
-        yt_dl_conf["outtmpl"] = f"{song.dir}/{song.title}"
+        yt_dl_conf["outtmpl"] = song.path
         # overwrite default mp3 codec
         yt_dl_conf["postprocessors"][0]["preferredcodec"] = song.filetype
 
