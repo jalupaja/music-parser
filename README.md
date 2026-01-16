@@ -26,6 +26,10 @@ You may also need to install ffmpeg in order to convert the downloaded videos to
 | `-db <file>` | specify the sqlite database file location                                                            | `./db.db`     |
 | `-d <path>`  | download the urls to the specified path. If no urls are given this will download the whole database! |               |
 | `-gui`       | open the gui version (`requirements-gui.txt` has to be installed)                                    |               |
+## Assumptions
+This program is basically just for me and therefore has some assumptions when using the program:
+- all inputs are genuine. SQL Injections is possible!
+- playlist-names are correct file-names (no "'" and so on). All other values can be arbitrary (theoretically).
 
 ## useful functions
 > These are functions inside of music_parser.py Some of them are never called by the program but are useful when needing extendet functionality
