@@ -401,7 +401,7 @@ def __add_to_db(db_cursor, data):
         "INSERT INTO playlists ("
         + music_struct.sql_columns
         + ") VALUES ('"
-        + "', '".join(data.get_values())
+        + "', '".join(data.get_sql_values())
         + "')"
     )
 

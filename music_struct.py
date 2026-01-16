@@ -59,15 +59,15 @@ class song:
     def set_rowid(self, rowid):
         self.rowid = rowid
     def set_title(self, title):
-        self.title = title.replace("'", "''")
+        self.title = title
     def set_playlists(self, playlists):
-        self.playlists = playlists.replace("'", "''")
+        self.playlists = playlists
     def set_artists(self, artists):
-        self.artists = artists.replace("'", "''")
+        self.artists = artists
     def set_genre(self, genre):
-        self.genre = genre.replace("'", "''")
+        self.genre = genre
     def set_url(self, url):
-        self.url = url.replace("'", "''")
+        self.url = url
     def set_url_type(self, url_type):
         self.url_type = url_type
     def set_yt_link(self, yt_link):
@@ -146,6 +146,13 @@ class song:
             self.dir,
             self.filetype,
         ]
+
+
+    def get_sql_values(self):
+        values = self.get_values()
+
+        values = [v.replace("'", "''") for v in values]
+        return values
 
 
     def __str__(self):
