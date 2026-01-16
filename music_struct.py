@@ -126,11 +126,11 @@ class song:
         if dir is None:
             dir = self.dir
         if title is None:
-            title = self.__filesystem_save(self.title)
+            title = self.title
         if filetype is None:
             filetype = self.filetype
 
-        return f"{dir}/{title}.{filetype}"
+        return f"{dir}/{self.__filesystem_save(title)}.{filetype}"
 
 
     def get_values(self):
