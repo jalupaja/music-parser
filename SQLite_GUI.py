@@ -417,25 +417,21 @@ def btn_push_del():
     msg_box.setDefaultButton(QMessageBox.StandardButton.Yes)
     res = msg_box.exec()
     if res == QMessageBox.StandardButton.Yes:
-        # TODO move to music_struct?
-        dir = qTable.item(row, 8).text()
-        title = qTable.item(row, 2).text()
-        filetype = qTable.item(row, 10).text()
-        if title == "":
-            return
+
+        queue = db_execute(
+            f"SELECT {music_struct.sql_columns} FROM '{__get_selected_table()}' WHERE rowid = {qTable.item(row, 0).text()}"
+        )
+        rem_path = song(select_data=queue).path()
+
         db_execute(
             f"DELETE FROM '{__get_selected_table()}' WHERE rowid={qTable.item(row, 0).text()}"
         )
         db_commit()
         qTable.removeRow(row)
-        from_path = (
-            f"{dir}/{title.replace('/', '|')}.{filetype}"
-            if dir and dir != "./"
-            else f"unsorted/{title.replace('/', '|')}.{filetype}"
-        )
-        if os.path.exists(from_path):
+
+        if os.path.exists(rem_path):
             try:
-                os.remove(from_path)
+                os.remove(rem_path)
             except FileNotFoundError:
                 pass
 
