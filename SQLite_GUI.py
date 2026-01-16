@@ -219,7 +219,7 @@ def edit_file_folder(col, songs, new_value):
     elif col == "title":
         for item in songs:
             from_file_path = item.path()
-            replace_path = item.path(title=replace.replace("/", "|"))
+            replace_path = item.path(title=new_value)
 
             # update playlist data
             for playlist in old_playlists:
@@ -462,9 +462,9 @@ def btn_push_add_playlist():
             )
 
         path = (
-            f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
+            f"{qTable.item(row, 9).text()}/{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
             if qTable.item(row, 9).text() != ""
-            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
+            else f"{new_playlist.split(';')[0]}/{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
         )
         for p in new_playlist.split(";"):
             __update_playlist(f"playlists/{p}.m3u", new_path=path)
@@ -482,7 +482,7 @@ def btn_push_rem_playlist():
         cur_playlists = qTable.item(row, 1).text().split(";")
         cur_playlist_len = len(cur_playlists)
         cur_path = qTable.item(row, 9).text()
-        file_name = f"{qTable.item(row, 2).text().replace('/', '|')}.{qTable.item(row, 10).text()}"
+        file_name = f"{qTable.item(row, 2).text()}.{qTable.item(row, 10).text()}"
 
         if cur_playlist_len == 0:
             continue
@@ -567,7 +567,7 @@ def btn_push_ren_yt():
             return
 
         qTable.cellChanged.disconnect()
-        path = f"{playlist}/{title.replace('/', '|')}.{filetype}"
+        path = f"{playlist}/{title}.{filetype}"
         if title != "" and os.path.exists(path):
             try:
                 os.remove(path)

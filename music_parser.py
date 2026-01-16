@@ -428,9 +428,9 @@ def __parse_single_url(arr):
                 len(
                     db.execute(
                         "SELECT title FROM playlists WHERE dir='"
-                        + data.dir.replace("'", "’")
+                        + data.dir
                         + "' AND title='"
-                        + data.title.replace("'", "’")
+                        + data.title
                         + "'"
                     ).fetchall()
                 )
@@ -441,17 +441,17 @@ def __parse_single_url(arr):
                         if config.use_invidious:
                             data.yt_link = invidious_parser.search_yt_id(
                                 __get_invidious_instance(),
-                                data.artists.replace("'", "’")
+                                data.artists
                                 + " "
-                                + data.title.replace("'", "’")
+                                + data.title
                                 + " music video",
                             )
                         else:
                             data.yt_link, year = youtube_music_parser.search_yt_id(
                                 __get_ytmusic(),
-                                data.artists.replace("'", "’")
+                                data.artists
                                 + " "
-                                + data.title.replace("'", "’"),
+                                + data.title
                             )
                             if year:
                                 data.year = year
