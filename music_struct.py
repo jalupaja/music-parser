@@ -151,12 +151,17 @@ class song:
             self.filetype,
         ]
 
+    def __sql_ready(self, value):
+        return value.replace("'", "''")
 
     def get_sql_values(self):
         values = self.get_values()
 
-        values = [v.replace("'", "''") for v in values]
+        values = [self.__sql_ready(v) for v in values]
         return values
+
+    def get_sql(self, key):
+        return self.__sql_ready(self.at(key))
 
 
     def __str__(self):

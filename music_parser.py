@@ -430,7 +430,7 @@ def __parse_single_url(arr):
                         "SELECT title FROM playlists WHERE dir='"
                         + data.dir
                         + "' AND title='"
-                        + data.title
+                        + data.get_sql("title")
                         + "'"
                     ).fetchall()
                 )
