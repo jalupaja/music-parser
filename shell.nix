@@ -7,6 +7,7 @@ mkShell {
   nativeBuildInputs = [
     direnv
 		glibc
+    # yt-dlp
 		# qt5.qtwayland
 
 		python313

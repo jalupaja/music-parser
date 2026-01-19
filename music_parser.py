@@ -512,6 +512,18 @@ def downloadVideo(song):
         except Exception as e:
             print("Exception in downloadVideo: " + str(e))
 
+        # try: # yt-dlp cli version
+        #     command = [
+        #         "yt-dlp",
+        #         "--output", song.path,
+        #         "--extract-audio",
+        #         "--audio-format", song.filetype,
+        #         "https://www.youtube.com/watch?v=" + song.yt_link
+        #     ]
+        #     result = subprocess.run(command, check=True)
+        # except Exception as e:
+        #     print("Exception in downloadVideo: " + str(e))
+
         __update_file_metadata(song)
 
 
