@@ -499,19 +499,20 @@ def downloadVideo(song):
     # TODO proxy this
     if not os.path.exists(song.path()):
         yt_dl_conf = config.yt_dl_options.copy()
-        yt_dl_conf["outtmpl"] = song.path
+        yt_dl_conf["outtmpl"] = song.path_no_ext()
         # overwrite default mp3 codec
         yt_dl_conf["postprocessors"][0]["preferredcodec"] = song.filetype
 
         if config.proxy_file != "":
             yt_dl_conf["proxy"] = __get_proxy()
 
-        try:
+        try: # yt-dlp python version
             with YoutubeDL(yt_dl_conf) as yt_dl:
                 yt_dl.download("https://www.youtube.com/watch?v=" + song.yt_link)
-            __update_file_metadata(song)
         except Exception as e:
-            print("Except in downloadVideo: " + str(e))
+            print("Exception in downloadVideo: " + str(e))
+
+        __update_file_metadata(song)
 
 
 if __name__ == "__main__":

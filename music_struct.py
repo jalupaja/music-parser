@@ -121,7 +121,8 @@ class song:
             case _:
                 return None
 
-    def path(self, dir=None, title=None, filetype=None):
+
+    def path_no_ext(self, dir=None, title=None):
         # update possible changes
         if dir is None:
             dir = self.dir
@@ -129,12 +130,19 @@ class song:
             dir = "unsorted"
         if title is None:
             title = self.title
-        if filetype is None:
-            filetype = self.filetype
 
         title = self.__filesystem_save(title)
 
-        return f"{dir}/{title}.{filetype}"
+        return f"{dir}/{title}"
+
+    def path(self, dir=None, title=None, filetype=None):
+        # update possible changes
+        if filetype is None:
+            filetype = self.filetype
+
+        front = self.path_no_ext(dir, title)
+
+        return f"{front}.{filetype}"
 
 
     def get_values(self):
